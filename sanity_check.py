@@ -162,6 +162,9 @@ def sanity_check_for_projection():
         print("Passed!")
 
 
+# TODO: add sanity check for rigid transformer
+
+
 def main():
     """Execute sanity check functions."""
     args = docopt(__doc__)

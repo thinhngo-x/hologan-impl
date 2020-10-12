@@ -73,3 +73,38 @@ class Projection(nn.Module):
         out = torch.transpose(out, 1, 3)
 
         return out
+
+
+def rigid_transform_3d_(x, theta):
+    """Rotate a 3D object.
+
+        @param x (Tensor) Input of shape (batch_size, c, d, h, w)
+        @param thetas (Tensor) Matrix of rotation, of shape (batch_size, 3, 4)
+
+        returns out (Tensor) Output of shape (batch_size, c, h, w)
+    """
+    grid = F.affine_grid(theta, x.size())  # Generate a sampling grid given a batch of affine matrices
+    out = F.grid_sample(x, grid)  # Compute the output using the sampling grid
+
+    return out
+
+
+class RigidTransform3d(nn.Module):
+    """Rigid-body transformer."""
+
+    def __init__(self):
+        """Initialization."""
+        super(RigidTransform3d, self).__init__()
+
+    def forward(self, x, theta):
+        """Rotate a 3D object.
+
+        @param x (Tensor) Input of shape (batch_size, c, d, h, w)
+        @param thetas (Tensor) Matrix of rotation, of shape (batch_size, 3, 4)
+
+        returns out (Tensor) Output of shape (batch_size, c, h, w)
+        """
+
+        return rigid_transform_3d_(x, theta)
+
+# TODO: Add basic blocks for the architecture
