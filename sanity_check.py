@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 """
 This is for sanity check.
 
@@ -10,7 +13,7 @@ Usage:
     sanity_check.py ResBlock2d
     sanity_check.py HoloDiscriminator
     sanity_check.py train_discriminator [--gpu]
-    sanity_check.py MLP
+    sanity_check.py mlp
 
 Options:
     --gpu   using GPU
@@ -422,7 +425,7 @@ def main():
         sanity_check_for_AdaIN()
     elif args['Projection']:
         sanity_check_for_projection()
-    elif args['MLP']:
+    elif args['mlp']:
         sanity_check_for_MLP()
     elif args['mean_std_2d']:
         sanity_check_for_channel_wise_mean_std_2d()
