@@ -12,7 +12,8 @@ Usage:
     sanity_check.py train_discriminator [--gpu]
     sanity_check.py MLP
 
---gpu   using GPU
+Options:
+    --gpu   using GPU
 """
 import sys
 from datetime import datetime
@@ -365,7 +366,8 @@ def sanity_check_for_train_discriminator(use_gpu=False):
     print(use_gpu)
     # z = torch.randn(128, device=device=None)
 
-    netD = Discriminator(128, (3, 128, 128), spec_norm=spectral_norm, norm_layer=nn.InstanceNorm2d).to(device)
+    netD = Discriminator(128, (3, 128, 128), spec_norm=spectral_norm,
+                         norm_layer=nn.InstanceNorm2d).to(device)
     criterion = nn.BCELoss()
     real_label = 1
     fake_label = 0
