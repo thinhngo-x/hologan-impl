@@ -12,19 +12,16 @@ from utils import functional
 from typing import List, Tuple
 
 
-class HoloGenerator(nn.Module):
-    def __init__(self, in_shape: Tuple, )
-
-
-class HoloDiscriminator(nn.Module):
-    def __init__(self, latent_vector_size: int, in_shape: Tuple, spec_norm=None):
+class Discriminator(nn.Module):
+    def __init__(self, latent_vector_size: int, in_shape: Tuple, spec_norm=None, norm_layer=nn.BatchNorm2d):
         """Initialize.
 
         @param latent_vector_size (int) Shape of the latent vector z. Eg: 128
         @param in_shape (Tuple) Shape of the input. Eg: (3, 128, 128)
         """
+        super(Discriminator, self).__init__()
         if in_shape != (3, 128, 128):
-            print("Input shape does not match!")
+            print("HoloDiscriminator: Input shape does not match!")
             sys.exit()
         self.z_dim = latent_vector_size
         if spec_norm is None:
@@ -33,22 +30,25 @@ class HoloDiscriminator(nn.Module):
             self.spec_norm = spec_norm
 
         self.conv1 = self.spec_norm(nn.Conv2d(3, 64, kernel_size=3, stride=2, padding=1, bias=False))  # 64x64
-        self.conv2 = ResBlock2d(64, 128, spec_norm=spec_norm)  # 32x32
-        self.conv3 = ResBlock2d(128, 256, spec_norm=spec_norm)  # 16x16
-        self.conv4 = ResBlock2d(256, 512, spec_norm=spec_norm)  # 8x8
-        self.conv5 = ResBlock2d(512, 1024, spec_norm=spec_norm)  # 4x4
-        self.conv6 = nn.Conv2d(1024, 1024, kernel_size=4, stride=1, padding=0, bias=False)  # 1
+        self.conv2 = ResBlock2d(64, 128, stride=2, spec_norm=spec_norm, norm_layer=norm_layer)  # 32x32
+        self.norm2 = norm_layer(128)
+        self.conv3 = ResBlock2d(128, 256, stride=2, spec_norm=spec_norm, norm_layer=norm_layer)  # 16x16
+        self.norm3 = norm_layer(256)
+        self.conv4 = ResBlock2d(256, 512, stride=2, spec_norm=spec_norm, norm_layer=norm_layer)  # 8x8
+        self.norm4 = norm_layer(512)
+        self.conv5 = ResBlock2d(512, 1024, stride=2, spec_norm=spec_norm, norm_layer=norm_layer)  # 4x4
+        self.norm5 = norm_layer(1024)
 
-        self.fc = nn.Linear(1024, 1)
+        self.fc = BLClassifier(1024 * 16)
 
-        self.style_classifier_128 = BLClassifier(128)
-        self.style_classifier_256 = BLClassifier(256)
-        self.style_classifier_512 = BLClassifier(512)
-        self.style_classifier_1024 = BLClassifier(1024)
+        self.style_classifier_128 = BLClassifier(128 * 2)
+        self.style_classifier_256 = BLClassifier(256 * 2)
+        self.style_classifier_512 = BLClassifier(512 * 2)
+        self.style_classifier_1024 = BLClassifier(1024 * 2)
 
-        self.reconstruct = nn.Linear(1024, self.z_dim)
+        self.reconstruct = nn.Linear(1024 * 16, self.z_dim)
 
-    def forward(self, x: torch.Tensor) -> (d_style: List[torch.Tensor], d_gan: torch.Tensor, d_id: torch.Tensor):
+    def forward(self, x: torch.Tensor) -> (torch.Tensor, torch.Tensor, torch.Tensor):
         """Forward.
 
         @param x (Tensor) A tensor of shape in_shape
@@ -60,24 +60,29 @@ class HoloDiscriminator(nn.Module):
         """
         bs = x.shape[0]
         x = self.conv1(x)
+        x = F.leaky_relu(x)
 
         x = self.conv2(x)
         mean_std = functional.channel_wise_mean_std_2d(x)
         d_s1 = self.style_classifier_128(mean_std.view(bs, -1))
+        x = self.norm2(x)
 
         x = self.conv3(x)
         mean_std = functional.channel_wise_mean_std_2d(x)
         d_s2 = self.style_classifier_256(mean_std.view(bs, -1))
+        x = self.norm3(x)
 
         x = self.conv4(x)
         mean_std = functional.channel_wise_mean_std_2d(x)
         d_s3 = self.style_classifier_512(mean_std.view(bs, -1))
+        x = self.norm4(x)
 
         x = self.conv5(x)
         mean_std = functional.channel_wise_mean_std_2d(x)
         d_s4 = self.style_classifier_1024(mean_std.view(bs, -1))
+        x = self.norm5(x)
 
-        x = self.conv6(x).view(bs, -1)
+        x = x.view(bs, -1)
 
         d_gan = self.fc(x)
         d_style = torch.cat((d_s1, d_s2, d_s3, d_s4), dim=1)

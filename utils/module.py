@@ -187,26 +187,26 @@ class ResBlock2d(nn.Module):
         @param stride (int)
         @param spec_norm ()
         """
-        super(ResBlock, self).__init__()
+        super(ResBlock2d, self).__init__()
 
         if norm_layer is None:
-            norm_layer = nn.BatchNorm2d()
+            norm_layer = nn.BatchNorm2d
         if spec_norm is None:
             self.spec_norm = lambda x: x
         else:
             self.spec_norm = spec_norm
 
         self.layers = nn.Sequential(
-            self.spec_norm(nn.Conv2d(inplanes, planes, kernel=3, stride=1, padding=1, bias=False)),
+            self.spec_norm(nn.Conv2d(inplanes, planes, kernel_size=3, stride=1, padding=1, bias=False)),
             nn.LeakyReLU(inplace=True),
             norm_layer(planes),
-            self.spec_norm(nn.Conv2d(planes, planes, kernel=3, stride=stride, padding=1, bias=False)),
+            self.spec_norm(nn.Conv2d(planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)),
             norm_layer(planes)
         )
 
-        if stride != 1 or planes != in_planes:
+        if stride != 1 or planes != inplanes:
             self.downsample = nn.Sequential(
-                self.spenc_norm(nn.Conv2d(in_planes, planes, kernel=1, stride=stride, padding=0, bias=False))
+                self.spec_norm(nn.Conv2d(inplanes, planes, kernel_size=1, stride=stride, padding=0, bias=False))
             )
         else:
             self.downsample = nn.Identity()
