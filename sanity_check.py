@@ -381,7 +381,7 @@ def sanity_check_for_train_discriminator(use_gpu=False):
     images, _ = it.next()
     img_grid = make_grid(images)
     writer.add_image("sample_batch", img_grid)
-    writer.add_graph(netD, images)
+    writer.add_graph(netD, images.to(device))
     writer.close()
 
     running_loss = 0.0

@@ -39,7 +39,7 @@ def matplotlib_imshow(img, one_channel=False):
 def images_to_probs(net, images):
     """Generate output froma trained network and a list of sampled images."""
     out = net(images)
-    return out
+    return out.detach()
 
 
 def plot_classes_preds(net, images):
