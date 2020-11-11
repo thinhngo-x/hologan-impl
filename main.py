@@ -56,7 +56,7 @@ def train_one_epoch(dataloader, model: HoloGAN.Net, criterion, optim_G, optim_D,
             thetas = (torch.rand(bs, device=device) - 0.5) * 180
         elif rot_axis == 'elevation':
             thetas = (torch.rand(bs, device=device) - 0.5) * 70
-        rot_mat = functional.get_matrix_rot_3d(thetas, rot_axis)
+        rot_mat = functional.get_matrix_rot_3d(thetas, rot_axis).to(device)
 
         imgs = imgs.to(device)
 
