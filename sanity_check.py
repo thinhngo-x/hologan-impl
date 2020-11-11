@@ -545,7 +545,7 @@ def sanity_check_for_train_hologan(use_gpu=True):
         device = torch.device('cpu')
     print(use_gpu)
 
-    hologan = HoloGAN.Net(128, (3, 128, 128))
+    hologan = HoloGAN.Net(128, (3, 128, 128)).to(device)
     init_layers_serious(hologan)
     criterion = HoloGAN.compute_loss
     dataloader = prepare_data(batch_size=8, subsample=subsample)
