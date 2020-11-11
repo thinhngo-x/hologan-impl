@@ -537,7 +537,7 @@ def sanity_check_for_HoloGenerator():
 def sanity_check_for_train_hologan(use_gpu=True):
     """Test training discriminator."""
     now = datetime.now()
-    subsample = 800
+    subsample = None
 
     if use_gpu and torch.cuda.is_available():
         device = torch.device('cuda')
@@ -561,7 +561,8 @@ def sanity_check_for_train_hologan(use_gpu=True):
     writer.add_image("sample_batch", img_grid)
     writer.close()
 
-    train_one_epoch(dataloader, hologan, criterion, optim_G, optim_D, device, writer, epoch=0, print_step=5)
+    for epoch in range(3):
+        train_one_epoch(dataloader, hologan, criterion, optim_G, optim_D, device, writer, epoch=epoch, print_step=20)
 
 
 def main():
