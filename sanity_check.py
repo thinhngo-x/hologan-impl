@@ -10,9 +10,11 @@ Usage:
     sanity_check.py Projection
     sanity_check.py mean_std_2d
     sanity_check.py BLClassifier
-    sanity_check.py ResBlock2d
+    sanity_check.py ResBlock
     sanity_check.py HoloDiscriminator
     sanity_check.py train_discriminator [--gpu]
+    sanity_check.py RigidTransform3d
+    sanity_check.py HoloGenerator
     sanity_check.py mlp
 
 Options:
@@ -32,13 +34,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from main import prepare_data
-from utils.module import AdaIN2d, AdaIN3d, Projection, MLP, BLClassifier, ResBlock2d
-from structures.HoloGAN import Discriminator
+from utils.module import AdaIN2d, AdaIN3d, Projection, MLP, BLClassifier, ResBlock
+from structures.HoloGAN import Discriminator, Generator
 from utils import functional
 
 from torch.utils.tensorboard import SummaryWriter
-
-# TODO: add sanity check for rigid transformer
 
 
 def init_layers(model):
@@ -48,16 +48,18 @@ def init_layers(model):
             m.weight.data.fill_(0.5)
             if m.bias is not None:
                 m.bias.data.fill_(0.1)
-        elif type(m) == nn.Conv2d:
+        elif type(m) in [nn.Conv2d, nn.Conv3d, nn.ConvTranspose2d, nn.ConvTranspose3d]:
             m.weight.data.fill_(0.5)
             if m.bias is not None:
                 m.bias.data.zero_()
-        elif type(m) == nn.BatchNorm2d:
+        elif type(m) in [nn.BatchNorm2d, ]:
             m.reset_parameters()
             m.eval()
             with torch.no_grad():
                 m.weight.fill_(1.0)
                 m.bias.zero_()
+        elif type(m) == nn.Parameter:
+            torch.nn.init.zeros_(m)
     with torch.no_grad():
         model.apply(init_weights)
 
@@ -199,11 +201,6 @@ def sanity_check_for_projection():
         print("Passed!")
 
 
-# def sanity_check_for_rigid_transform():
-#     """Test Rigid transformation module."""
-#     pass
-
-
 def sanity_check_for_MLP():
     """Test MLP module."""
     print("Running check for MLP...")
@@ -287,12 +284,12 @@ def sanity_check_for_BLClassifier():
         print("Passed!")
 
 
-def sanity_check_for_ResBlock2d():
-    """Test module ResBlock2d."""
-    print("Running check for ResBlock2d...")
+def sanity_check_for_ResBlock():
+    """Test module ResBlock."""
+    print("Running check for ResBlock...")
     a = torch.stack((torch.zeros(1, 8, 8), torch.ones(1, 8, 8)))
     c = a.clone()
-    block = ResBlock2d(1, 2, spec_norm=None, stride=2)
+    block = ResBlock(1, 2, spec_norm=None, stride=2)
     init_layers(block)
     res = block(c)
     truth = torch.stack(
@@ -315,7 +312,7 @@ def sanity_check_for_ResBlock2d():
     else:
         print("Passed test 1!")
 
-    block = ResBlock2d(1, 1, spec_norm=spectral_norm, stride=2)
+    block = ResBlock(1, 1, spec_norm=spectral_norm, stride=2)
     init_layers(block)
     res = block(c)
     res = block.layers[3].weight
@@ -330,6 +327,40 @@ def sanity_check_for_ResBlock2d():
         print("But got: \n", res)
     else:
         print("Passed test 2!")
+
+    a = torch.zeros((1, 512, 4, 4, 4))
+    block = ResBlock(512, 128, stride=2, norm_layer=nn.InstanceNorm3d,
+                     conv=functional.trans_conv_3d_pad)
+    init_layers(block)
+    truth = torch.zeros((1, 128, 8, 8, 8))
+    res = block(a)
+    if res.shape != truth.shape:
+        print("Failed at checking shape of output!")
+        print("Expected shape: ", truth.shape)
+        print("But got: ", res.shape)
+    elif torch.norm(res - truth) > 1e-2:
+        print("Failed at checking value of output!")
+        print("Expected: \n", truth)
+        print("But got: \n", res)
+    else:
+        print("Passed test 3!")
+
+    a = torch.zeros((1, 1024, 16, 16))
+    block = ResBlock(1024, 256, stride=2, norm_layer=nn.InstanceNorm2d,
+                     conv=functional.trans_conv_2d_pad)
+    init_layers(block)
+    truth = torch.zeros((1, 256, 32, 32))
+    res = block(a)
+    if res.shape != truth.shape:
+        print("Failed at checking shape of output!")
+        print("Expected shape: ", truth.shape)
+        print("But got: ", res.shape)
+    elif torch.norm(res - truth) > 1e-2:
+        print("Failed at checking value of output!")
+        print("Expected: \n", truth)
+        print("But got: \n", res)
+    else:
+        print("Passed test 4!")
 
 
 def sanity_check_for_HoloDiscriminator():
@@ -411,6 +442,81 @@ def sanity_check_for_train_discriminator(use_gpu=False):
                 running_loss = 0.0
 
 
+def sanity_check_for_rigid_transform_3d():
+    """Test RigidTransform3d."""
+    a = torch.Tensor(
+        [[1, 1, 1],
+         [0, 1, 0],
+         [0, 0, 0]]
+    )
+    # print(a.shape)
+    a = a.view(1, 1, 3, 3, 1)
+    theta = torch.Tensor([90])
+    theta = functional.get_matrix_rot_3d(theta, 'elevation')
+    theta = theta.view(1, 3, 4)
+    res = functional.rigid_transform_3d_(a, theta, align_corners=False, mode='bilinear')
+    truth = torch.Tensor(
+        [[1, 0, 0],
+         [1, 1, 0],
+         [1, 0, 0]]
+    )
+    truth = truth.view(1, 1, 3, 3, 1)
+    if res.shape != truth.shape:
+        print("Failed at checking shape of output!")
+        print("Expected shape: ", truth.shape)
+        print("But got: ", res.shape)
+    elif torch.norm(res - truth) > 1e-2:
+        print("Failed at checking value of output!")
+        print("Expected: \n", truth)
+        print("But got: \n", res)
+    else:
+        print("Passed test 1!")
+
+    a = a.view(1, 1, 3, 1, 3)
+    theta = torch.Tensor([90])
+    theta = functional.get_matrix_rot_3d(theta, 'azimuth')
+    theta = theta.view(1, 3, 4)
+    res = functional.rigid_transform_3d_(a, theta, align_corners=False, mode='bilinear')
+    truth = torch.Tensor(
+        [[1, 0, 0],
+         [1, 1, 0],
+         [1, 0, 0]]
+    )
+    truth = truth.view(1, 1, 3, 1, 3)
+    if res.shape != truth.shape:
+        print("Failed at checking shape of output!")
+        print("Expected shape: ", truth.shape)
+        print("But got: ", res.shape)
+    elif torch.norm(res - truth) > 1e-2:
+        print("Failed at checking value of output!")
+        print("Expected: \n", truth)
+        print("But got: \n", res)
+    else:
+        print("Passed test 2!")
+
+
+def sanity_check_for_HoloGenerator():
+    """Test class Generator in HoloGAN.py."""
+    z = torch.zeros((3, 128))
+    thetas = torch.Tensor([90, 15, 45])
+    rot_matrix = functional.get_matrix_rot_3d(thetas, 'azimuth')
+    g = Generator(128, (3, 128, 128))
+    init_layers(g)
+    res = g(z, rot_matrix)
+    truth = torch.zeros((3, 3, 128, 128))
+    if res.shape != truth.shape:
+        print("Failed at checking shape of output!")
+        print("Expected shape: ", truth.shape)
+        print("But got: ", res.shape)
+    elif torch.norm(res - truth) / (3 * 3 * 128 * 128) > 1e-3:
+        print("Failed at checking value of output!")
+        print("Expected: \n", truth)
+        print("But got: \n", res)
+        print("Norm: \n", torch.norm(res) / (3 * 3 * 128 * 128))
+    else:
+        print("Passed!")
+
+
 def main():
     """Execute sanity check functions."""
     args = docopt(__doc__)
@@ -431,8 +537,8 @@ def main():
         sanity_check_for_channel_wise_mean_std_2d()
     elif args['BLClassifier']:
         sanity_check_for_BLClassifier()
-    elif args['ResBlock2d']:
-        sanity_check_for_ResBlock2d()
+    elif args['ResBlock']:
+        sanity_check_for_ResBlock()
     elif args['HoloDiscriminator']:
         sanity_check_for_HoloDiscriminator()
     elif args['train_discriminator']:
@@ -440,6 +546,10 @@ def main():
             sanity_check_for_train_discriminator(use_gpu=True)
         else:
             sanity_check_for_train_discriminator()
+    elif args['RigidTransform3d']:
+        sanity_check_for_rigid_transform_3d()
+    elif args['HoloGenerator']:
+        sanity_check_for_HoloGenerator()
     else:
         raise RuntimeError('invalid run mode')
 

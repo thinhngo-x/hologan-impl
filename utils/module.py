@@ -5,54 +5,9 @@ from torch import nn
 import torch.nn.functional as F
 import numpy as np
 
+from utils import functional
+
 from typing import List
-
-
-def adain_2d_(x, s, eps=1e-8):
-    """Return a normalized tensor controlled by style s.
-
-    @param x (Tensor) Input of shape (batch_size, c, h, w)
-    @param s (Tensor) Style of shape (batch_size, c, 2)
-
-    @returns out (Tensor) Output of shape (batch_size, c, h, w)
-    """
-
-    m_x = torch.mean(x, dim=(2, 3), keepdim=True)
-    std_x = torch.std(x, dim=(2, 3), keepdim=True, unbiased=False)  # unbiased or not?
-
-    # print("Mean of x: ", m_x)
-    # print("Std of x: ", std_x)
-    s = s.unsqueeze(3)
-    s = s.unsqueeze(4)
-    # print(s.shape)
-    # print(s[:, :, 1, :].shape)
-    out = s[:, :, 0] * (x - m_x) / (std_x + eps) + s[:, :, 1]
-
-    return out
-
-
-def adain_3d_(x, s, eps=1e-8):
-    """Return a normalized tensor controlled by style s.
-
-    @param x (Tensor) Input of shape (batch_size, c, d, h, w)
-    @param s (Tensor) Style of shape (batch_size, c, 2)
-
-    @returns out (Tensor) Output of shape (batch_size, c, d, h, w)
-    """
-    dims = len(x.shape)
-    m_x = torch.mean(x, dim=tuple(range(2, dims)), keepdim=True)
-    std_x = torch.std(x, dim=tuple(range(2, dims)), keepdim=True, unbiased=False)  # unbiased or not?
-
-    # print("Mean of x: ", m_x)
-    # print("Std of x: ", std_x)
-    s = s.unsqueeze(3)
-    s = s.unsqueeze(4)
-    s = s.unsqueeze(5)
-    # print(s.shape)
-    # print(s[:, :, 1, :].shape)
-    out = s[:, :, 0] * (x - m_x) / (std_x + eps) + s[:, :, 1]
-
-    return out
 
 
 class AdaIN2d(nn.Module):
@@ -68,7 +23,7 @@ class AdaIN2d(nn.Module):
         @param x (Tensor) Input of shape (batch_size, c, h, w)
         @param s (Tensor) Style of shape (batch_size, c, 2)
         """
-        return adain_2d_(x, s, eps=eps)
+        return functional.adain_2d_(x, s, eps=eps)
 
 
 class AdaIN3d(nn.Module):
@@ -84,7 +39,7 @@ class AdaIN3d(nn.Module):
         @param x (Tensor) Input of shape (batch_size, c, d, h, w)
         @param s (Tensor) Style of shape (batch_size, c, 2)
         """
-        return adain_3d_(x, s, eps=eps)
+        return functional.adain_3d_(x, s, eps=eps)
 
 
 class Projection(nn.Module):
@@ -116,20 +71,6 @@ class Projection(nn.Module):
         return out
 
 
-def rigid_transform_3d_(x, theta):
-    """Rotate a 3D object.
-
-        @param x (Tensor) Input of shape (batch_size, c, d, h, w)
-        @param thetas (Tensor) Matrix of rotation, of shape (batch_size, 3, 4)
-
-        returns out (Tensor) Output of shape (batch_size, c, h, w)
-    """
-    grid = F.affine_grid(theta, x.size())  # Generate a sampling grid given a batch of affine matrices
-    out = F.grid_sample(x, grid)  # Compute the output using the sampling grid
-
-    return out
-
-
 class RigidTransform3d(nn.Module):
     """Rigid-body transformer."""
 
@@ -146,7 +87,7 @@ class RigidTransform3d(nn.Module):
         returns out (Tensor) Output of shape (batch_size, c, h, w)
         """
 
-        return rigid_transform_3d_(x, theta)
+        return functional.rigid_transform_3d_(x, theta)
 
 
 class MLP(nn.Module):
@@ -175,11 +116,11 @@ class MLP(nn.Module):
         return self.mlp(x)
 
 
-class ResBlock2d(nn.Module):
+class ResBlock(nn.Module):
     """Residual network block."""
 
     def __init__(self, inplanes, planes, kernel=3, stride=1,
-                 spec_norm=None, norm_layer=None):
+                 spec_norm=None, norm_layer=None, conv=nn.Conv2d):
         """Initialize.
 
         @param inplanes (int) Number of channels of input
@@ -187,7 +128,7 @@ class ResBlock2d(nn.Module):
         @param stride (int)
         @param spec_norm ()
         """
-        super(ResBlock2d, self).__init__()
+        super(ResBlock, self).__init__()
 
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
@@ -197,21 +138,21 @@ class ResBlock2d(nn.Module):
             self.spec_norm = spec_norm
 
         self.layers = nn.Sequential(
-            self.spec_norm(nn.Conv2d(inplanes, planes, kernel_size=3, stride=1, padding=1, bias=False)),
+            self.spec_norm(conv(inplanes, planes, kernel_size=3, stride=1, padding=1, bias=False)),
             nn.LeakyReLU(inplace=True),
             norm_layer(planes),
-            self.spec_norm(nn.Conv2d(planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)),
+            self.spec_norm(conv(planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)),
             norm_layer(planes)
         )
 
         if stride != 1 or planes != inplanes:
             self.downsample = nn.Sequential(
-                self.spec_norm(nn.Conv2d(inplanes, planes, kernel_size=1, stride=stride, padding=0, bias=False))
+                self.spec_norm(conv(inplanes, planes, kernel_size=1, stride=stride, padding=0, bias=False))
             )
         else:
             self.downsample = nn.Identity()
 
-        self.relu = nn.LeakyReLU(inplace=True)
+        # self.relu = nn.LeakyReLU(inplace=True)
 
     def forward(self, x):
         """Forward.
@@ -224,7 +165,7 @@ class ResBlock2d(nn.Module):
         identity = self.downsample(x)
 
         out += identity
-        out = self.relu(out)
+        # out = self.relu(out)
 
         return out
 
