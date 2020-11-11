@@ -20,7 +20,8 @@ BATCH_SIZE = 8
 IMG_SIZE = (128, 128)
 
 
-def prepare_data(path_to_data=PATH_TO_DATA, batch_size=BATCH_SIZE, img_size=IMG_SIZE, subsample=None):
+def prepare_data(path_to_data=PATH_TO_DATA, batch_size=BATCH_SIZE,
+                 img_size=IMG_SIZE, subsample=None, shuffle=True):
     """Return a DataLoader of the dataset."""
     if subsample is not None:
         idx = np.arange(5000)
@@ -36,7 +37,7 @@ def prepare_data(path_to_data=PATH_TO_DATA, batch_size=BATCH_SIZE, img_size=IMG_
     print("Length of data: ", len(training_data))
 
     training_loader = torch.utils.data.DataLoader(training_data, batch_size=batch_size,
-                                                  sampler=sampler)
+                                                  sampler=sampler, shuffle=shuffle)
     return training_loader
 
 
@@ -51,12 +52,14 @@ def train_one_epoch(dataloader, model: HoloGAN.Net, criterion, optim_G, optim_D,
         bs, c, h, w = imgs.shape
         z = torch.rand((bs, z_dim), device=device)
         z /= torch.norm(z) * z_norm
-        rot_axis = 'azimuth' if np.random.rand() >= 0.5 else 'elevation'
-        if rot_axis == 'azimuth':
-            thetas = (torch.rand(bs, device=device) - 0.5) * 180
-        elif rot_axis == 'elevation':
-            thetas = (torch.rand(bs, device=device) - 0.5) * 70
-        rot_mat = functional.get_matrix_rot_3d(thetas, rot_axis).to(device)
+        
+        thetas_azm = (torch.rand(bs, device=device) - 0.5) * 180
+        thetas_elv = (torch.rand(bs, device=device) - 0.5) * 70
+
+        rot_mat_azm = functional.get_matrix_rot_3d(thetas_azm, 'azimuth')
+        rot_mat = functional.get_matrix_rot_3d(thetas_elv, 'elevation')
+        rot_mat[:, :3, :3] = torch.matmul(rot_mat[:, :3, :3], rot_mat_azm[:, :3, :3])
+        rot_mat = rot_mat.to(device)
 
         imgs = imgs.to(device)
 
