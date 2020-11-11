@@ -15,6 +15,7 @@ Usage:
     sanity_check.py train_discriminator [--gpu]
     sanity_check.py RigidTransform3d
     sanity_check.py HoloGenerator
+    sanity_check.py train_hologan [--gpu]
     sanity_check.py mlp
 
 Options:
@@ -33,9 +34,10 @@ from torch.nn.utils import spectral_norm
 import numpy as np
 import matplotlib.pyplot as plt
 
-from main import prepare_data
+from main import prepare_data, train_one_epoch
 from utils.module import AdaIN2d, AdaIN3d, Projection, MLP, BLClassifier, ResBlock
 from structures.HoloGAN import Discriminator, Generator
+from structures import HoloGAN
 from utils import functional
 
 from torch.utils.tensorboard import SummaryWriter
@@ -60,6 +62,19 @@ def init_layers(model):
                 m.bias.zero_()
         elif type(m) == nn.Parameter:
             torch.nn.init.zeros_(m)
+    with torch.no_grad():
+        model.apply(init_weights)
+
+
+def init_layers_serious(model):
+    """Reinitialize the layer weights for sanity check."""
+    def init_weights(m):
+        if type(m) == nn.Linear:
+            torch.nn.init.kaiming_normal_(m.weight)
+        elif type(m) in [nn.Conv2d, nn.Conv3d, nn.ConvTranspose2d, nn.ConvTranspose3d]:
+            torch.nn.init.kaiming_normal_(m.weight)
+        elif type(m) == nn.Parameter:
+            torch.nn.init.uniform_(m)
     with torch.no_grad():
         model.apply(init_weights)
 
@@ -444,6 +459,7 @@ def sanity_check_for_train_discriminator(use_gpu=False):
 
 def sanity_check_for_rigid_transform_3d():
     """Test RigidTransform3d."""
+    print("Running check for RigidTransform3d...")
     a = torch.Tensor(
         [[1, 1, 1],
          [0, 1, 0],
@@ -497,6 +513,7 @@ def sanity_check_for_rigid_transform_3d():
 
 def sanity_check_for_HoloGenerator():
     """Test class Generator in HoloGAN.py."""
+    print("Running check for HoloGenerator...")
     z = torch.zeros((3, 128))
     thetas = torch.Tensor([90, 15, 45])
     rot_matrix = functional.get_matrix_rot_3d(thetas, 'azimuth')
@@ -515,6 +532,36 @@ def sanity_check_for_HoloGenerator():
         print("Norm: \n", torch.norm(res) / (3 * 3 * 128 * 128))
     else:
         print("Passed!")
+
+
+def sanity_check_for_train_hologan(use_gpu=True):
+    """Test training discriminator."""
+    now = datetime.now()
+    subsample = 800
+
+    if use_gpu and torch.cuda.is_available():
+        device = torch.device('cuda')
+    else:
+        device = torch.device('cpu')
+    print(use_gpu)
+
+    hologan = HoloGAN.Net(128, (3, 128, 128))
+    init_layers_serious(hologan)
+    criterion = HoloGAN.compute_loss
+    dataloader = prepare_data(batch_size=8, subsample=subsample)
+    optim_G = optim.Adam(hologan.G.parameters())
+    optim_D = optim.Adam(hologan.D.parameters())
+
+    # Setup tensorboard
+    logdir = "logs/fit/" + now.strftime("%Y%m%d-%H%M%S")
+    writer = SummaryWriter(logdir)
+    it = iter(dataloader)
+    images, _ = it.next()
+    img_grid = make_grid(images)
+    writer.add_image("sample_batch", img_grid)
+    writer.close()
+
+    train_one_epoch(dataloader, hologan, criterion, optim_G, optim_D, device, writer, epoch=0, print_step=5)
 
 
 def main():
@@ -546,6 +593,11 @@ def main():
             sanity_check_for_train_discriminator(use_gpu=True)
         else:
             sanity_check_for_train_discriminator()
+    elif args['train_hologan']:
+        if args['--gpu']:
+            sanity_check_for_train_hologan(use_gpu=True)
+        else:
+            sanity_check_for_train_hologan()
     elif args['RigidTransform3d']:
         sanity_check_for_rigid_transform_3d()
     elif args['HoloGenerator']:

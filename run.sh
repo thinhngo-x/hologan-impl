@@ -10,6 +10,7 @@ then
     python sanity_check.py ResBlock
     python sanity_check.py HoloDiscriminator
     python sanity_check.py RigidTransform3d
+    python sanity_check.py HoloGenerator
     python sanity_check.py mlp
     if ! [ -z $2 ]
     then

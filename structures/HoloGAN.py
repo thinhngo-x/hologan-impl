@@ -8,8 +8,63 @@ import torch.nn.functional as F
 import numpy as np
 from utils.module import ResBlock, BLClassifier, Projection, MLP
 from utils import functional
+from torch.nn.utils import spectral_norm
 
 from typing import List, Tuple
+
+
+def compute_loss(prediction, label):
+    """Compute loss of the model HoloGAN.
+
+    @param prediction (Tuple) A tuple of 3 outputs (d_gan, d_id, d_style)
+    @param label (Tuple) A tuple of 3 labels (lb_gan, lb_id, lb_style)
+
+    @returns loss (List) A list of 3 losses (loss_gan, loss_id, loss_style)
+    """
+    # print(prediction)
+    loss_gan = F.binary_cross_entropy(prediction[0], label[0])
+    loss_id = F.mse_loss(prediction[1], label[1])
+    loss_style = F.binary_cross_entropy(prediction[2].view(-1), label[2].view(-1))
+
+    return [loss_gan, loss_id, loss_style]
+
+
+def gen_labels(batch_size: int, label: bool, device: torch.device, z: torch.Tensor):
+    """Generate labels in training.
+
+    @param batch_size (int)
+    @param label (bool) True: Labels Real
+                        False: Labels Fake
+    @param device
+    @param z (Tensor) Latent vector, of shape (bs, z_dim)
+
+    @returns lb_gan (Tensor) GAN label of shape (bs, 1)
+             lb_id (Tensor) = z
+             lb_style (Tensor) Style label of shape (bs, 4)
+    """
+    lb = label * 1
+    lb_gan = torch.full((batch_size, 1), lb, dtype=torch.float, device=device)
+    lb_id = z
+    lb_style = torch.full((batch_size, 4), lb, dtype=torch.float, device=device)
+
+    return lb_gan, lb_id, lb_style
+
+
+class Net(nn.Module):
+    def __init__(self, latent_vector_size: int, img_shape: Tuple, spec_norm=spectral_norm, norm_layer=nn.InstanceNorm2d):
+        """Initialize.
+        """
+        super(Net, self).__init__()
+        self.G = Generator(latent_vector_size, img_shape)
+        self.D = Discriminator(latent_vector_size, img_shape, spec_norm=spec_norm, norm_layer=norm_layer)
+
+    def forward(self, z, rot_matrix):
+        """Forward.
+        """
+        out = self.G(z, rot_matrix)
+        d_gan, d_id, d_style = self.D(out)
+
+        return (d_gan, d_id, d_style)
 
 
 class Generator(nn.Module):
@@ -25,7 +80,7 @@ class Generator(nn.Module):
             sys.exit()
         self.z_dim = latent_vector_size
 
-        self.constant = nn.Parameter(torch.zeros((1, 512, 4, 4, 4)))
+        self.constant = nn.Parameter(torch.rand((1, 512, 4, 4, 4)))
         self.trans_conv1 = ResBlock(512, 128, stride=2, norm_layer=nn.InstanceNorm3d, conv=functional.trans_conv_3d_pad)
         self.mlp1 = MLP([self.z_dim, 128 * 2])
         self.trans_conv2 = ResBlock(128, 64, stride=2, norm_layer=nn.InstanceNorm3d, conv=functional.trans_conv_3d_pad)
@@ -77,13 +132,13 @@ class Generator(nn.Module):
         x = self.trans_conv5(x)
         style = self.mlp5(z).view(bs, 3, 2)  # Hard-code
         x = functional.adain_2d_(x, style)
-        out = F.leaky_relu(x)
+        out = torch.sigmoid(x)
 
         return out
 
 
 class Discriminator(nn.Module):
-    def __init__(self, latent_vector_size: int, in_shape: Tuple, spec_norm=None, norm_layer=nn.BatchNorm2d):
+    def __init__(self, latent_vector_size: int, in_shape: Tuple, spec_norm=None, norm_layer=nn.InstanceNorm2d):
         """Initialize.
 
         @param latent_vector_size (int) Shape of the latent vector z. Eg: 128
