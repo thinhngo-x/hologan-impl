@@ -183,7 +183,7 @@ def main():
     angles = eval(args['angles'])
     for epoch in range(args['num_epochs']):
         train_one_epoch(dataloader, hologan, criterion, optim_G, optim_D,
-                        device, writer, angles, epoch=epoch, print_step=args['print_step'])
+                        device, writer, epoch, angles, print_step=args['print_step'])
         save_checkpoint(optim_G, optim_D, hologan, epoch)
 
 
