@@ -91,8 +91,10 @@ class Generator(nn.Module):
         self.mlp3 = MLP([self.z_dim, 256 * 2])
         self.trans_conv4 = ResBlock(256, 64, stride=2, norm_layer=nn.InstanceNorm2d, conv=functional.trans_conv_2d_pad)
         self.mlp4 = MLP([self.z_dim, 64 * 2])
-        self.trans_conv5 = ResBlock(64, 3, stride=2, norm_layer=nn.InstanceNorm2d, conv=functional.trans_conv_2d_pad)
-        self.mlp5 = MLP([self.z_dim, 64, 3 * 2])  # one hidden layer
+        self.trans_conv5 = ResBlock(64, 32, stride=2, norm_layer=nn.InstanceNorm2d, conv=functional.trans_conv_2d_pad)
+        self.mlp5 = MLP([self.z_dim, 32 * 2])
+
+        self.conv_2d = ResBlock(32, 3, stride=1, norm_layer=nn.InstanceNorm2d, conv=nn.Conv2d)
 
     def forward(self, z, rot_matrix):
         """Forward.
@@ -132,6 +134,9 @@ class Generator(nn.Module):
         x = self.trans_conv5(x)
         style = self.mlp5(z).view(bs, 3, 2)  # Hard-code
         x = functional.adain_2d_(x, style)
+        x = F.leaky_relu(x)
+
+        x = self.conv_2d(x)
         out = torch.tanh(x)
 
         return out
