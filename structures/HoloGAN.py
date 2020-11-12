@@ -154,6 +154,7 @@ class Discriminator(nn.Module):
         else:
             self.spec_norm = spec_norm
 
+        self.norm0 = norm_layer(3)
         self.conv1 = self.spec_norm(nn.Conv2d(3, 64, kernel_size=3, stride=2, padding=1, bias=False))  # 64x64
         self.conv2 = ResBlock(64, 128, stride=2, spec_norm=spec_norm, norm_layer=norm_layer)  # 32x32
         self.norm2 = norm_layer(128)
@@ -188,7 +189,7 @@ class Discriminator(nn.Module):
 
         mean_std = functional.channel_wise_mean_std_2d(x)
         d_s0 = self.style_classifier_3(mean_std.view(bs, -1))
-        x = F.leaky_relu(self.norm)
+        x = F.leaky_relu(self.norm0(x))
 
         x = self.conv1(x)
         x = F.leaky_relu(x)
