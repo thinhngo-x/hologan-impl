@@ -190,7 +190,7 @@ def main():
     else:
         device = torch.device('cpu')
 
-    hologan = HoloGAN.Net(128, (3, 128, 128))
+    hologan = HoloGAN.Net(128, (3, 128, 128)).to(device)
 
     criterion = HoloGAN.compute_loss
     dataloader = prepare_data(batch_size=args['batch_size'], subsample=args['subsample'])
@@ -204,8 +204,6 @@ def main():
             start_epoch = args['resume']
     else:
         start_epoch = 0
-
-    hologan.to(device)
 
     # Setup tensorboard
     logdir = "logs/fit/" + args['log_name']
