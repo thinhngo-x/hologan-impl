@@ -61,7 +61,8 @@ def prepare_data(path_to_data=PATH_TO_DATA, batch_size=BATCH_SIZE,
     transform = transforms.Compose([
         transforms.RandomHorizontalFlip(p=0.5),
         transforms.Resize(img_size),
-        transforms.ToTensor()
+        transforms.ToTensor(),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     ])
     training_data = torchvision.datasets.ImageFolder(path_to_data, transform=transform)
     print("Length of data: ", len(training_data))
@@ -194,8 +195,8 @@ def main():
 
     criterion = HoloGAN.compute_loss
     dataloader = prepare_data(batch_size=args['batch_size'], subsample=args['subsample'])
-    optim_G = optim.Adam(hologan.G.parameters(), lr=args['lr_g'])
-    optim_D = optim.Adam(hologan.D.parameters(), lr=args['lr_d'])
+    optim_G = optim.Adam(hologan.G.parameters(), lr=args['lr_g'], betas=(0.5, 0.999))
+    optim_D = optim.Adam(hologan.D.parameters(), lr=args['lr_d'], betas=(0.5, 0.999))
 
     if args['resume'] > 0:
         optim_G, optim_D, hologan, start_epoch = load_checkpoint(optim_G, optim_D,
