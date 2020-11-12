@@ -132,7 +132,7 @@ class Generator(nn.Module):
         x = F.leaky_relu(x)
 
         x = self.trans_conv5(x)
-        style = self.mlp5(z).view(bs, 3, 2)  # Hard-code
+        style = self.mlp5(z).view(bs, 32, 2)  # Hard-code
         x = functional.adain_2d_(x, style)
         x = F.leaky_relu(x)
 
