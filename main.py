@@ -206,8 +206,8 @@ def main():
         start_epoch = 0
 
     # Setup tensorboard
-    logdir = "logs/fit/" + args['log_name']
-    writer = SummaryWriter(logdir)
+    logdir = "logs/" + args['log_name']
+    writer = SummaryWriter(Path(logdir))
 
     angles = eval(args['angles'])
     for epoch in range(start_epoch, args['num_epochs']):

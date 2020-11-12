@@ -40,12 +40,12 @@ def gen_labels(batch_size: int, label: bool, device: torch.device, z: torch.Tens
 
     @returns lb_gan (Tensor) GAN label of shape (bs, 1)
              lb_id (Tensor) = z
-             lb_style (Tensor) Style label of shape (bs, 4)
+             lb_style (Tensor) Style label of shape (bs, 5)
     """
     lb = label * 1
     lb_gan = torch.full((batch_size, 1), lb, dtype=torch.float, device=device)
     lb_id = z
-    lb_style = torch.full((batch_size, 4), lb, dtype=torch.float, device=device)
+    lb_style = torch.full((batch_size, 5), lb, dtype=torch.float, device=device)
 
     return lb_gan, lb_id, lb_style
 
@@ -80,7 +80,7 @@ class Generator(nn.Module):
             sys.exit()
         self.z_dim = latent_vector_size
 
-        self.constant = nn.Parameter(torch.rand((1, 512, 4, 4, 4)))
+        self.constant = nn.Parameter(torch.rand((1, 512, 4, 4, 4)) * 2 - 1)
         self.trans_conv1 = ResBlock(512, 128, stride=2, norm_layer=nn.InstanceNorm3d, conv=functional.trans_conv_3d_pad)
         self.mlp1 = MLP([self.z_dim, 128 * 2])
         self.trans_conv2 = ResBlock(128, 64, stride=2, norm_layer=nn.InstanceNorm3d, conv=functional.trans_conv_3d_pad)
@@ -92,7 +92,7 @@ class Generator(nn.Module):
         self.trans_conv4 = ResBlock(256, 64, stride=2, norm_layer=nn.InstanceNorm2d, conv=functional.trans_conv_2d_pad)
         self.mlp4 = MLP([self.z_dim, 64 * 2])
         self.trans_conv5 = ResBlock(64, 3, stride=2, norm_layer=nn.InstanceNorm2d, conv=functional.trans_conv_2d_pad)
-        self.mlp5 = MLP([self.z_dim, 3 * 2])
+        self.mlp5 = MLP([self.z_dim, 64, 3 * 2])  # one hidden layer
 
     def forward(self, z, rot_matrix):
         """Forward.
@@ -166,6 +166,7 @@ class Discriminator(nn.Module):
 
         self.fc = BLClassifier(1024 * 16)
 
+        self.style_classifier_3 = BLClassifier(3 * 2)
         self.style_classifier_128 = BLClassifier(128 * 2)
         self.style_classifier_256 = BLClassifier(256 * 2)
         self.style_classifier_512 = BLClassifier(512 * 2)
@@ -181,9 +182,14 @@ class Discriminator(nn.Module):
         @returns d_gan (Tensor) A tensor of shape (bs) indicating the probability whether the image generated is real.
                  d_id (Tensor) A reconstructed latent vector of shape (bs, self.z_dim)
                  d_style (Tensor) A concatenated tensor indicating the probability whether those styles are real.
-                                  Shape (bs, 4), which means styles from 4 layers.
+                                  Shape (bs, 5), which means styles from 4 layers and the input.
         """
         bs = x.shape[0]
+
+        mean_std = functional.channel_wise_mean_std_2d(x)
+        d_s0 = self.style_classifier_3(mean_std.view(bs, -1))
+        x = F.leaky_relu(self.norm)
+
         x = self.conv1(x)
         x = F.leaky_relu(x)
 
@@ -210,7 +216,7 @@ class Discriminator(nn.Module):
         x = x.view(bs, -1)
 
         d_gan = self.fc(x)
-        d_style = torch.cat((d_s1, d_s2, d_s3, d_s4), dim=1)
+        d_style = torch.cat((d_s0, d_s1, d_s2, d_s3, d_s4), dim=1)
         d_id = self.reconstruct(x)
 
         return d_gan, d_id, d_style
