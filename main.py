@@ -30,7 +30,7 @@ IMG_SIZE = (128, 128)
 def parse_arg():
     now = datetime.now()
     parser = argparse.ArgumentParser(description="")
-    parser.add_argument('--log-name', type=str, default=now.strftime("%Y%m%d-%H%M%S"))
+    parser.add_argument('--log_name', type=str, default=now.strftime("%Y%m%d-%H%M%S"))
     parser.add_argument('--batch_size', type=int, default=8)
     parser.add_argument('--angles', type=str, default='[70, -70, 180, -180, 30, -30]')
     parser.add_argument('--num_epochs', type=int, default=100)
@@ -177,7 +177,7 @@ def main():
     optim_D = optim.Adam(hologan.D.parameters(), lr=args['lr_d'])
 
     # Setup tensorboard
-    logdir = "logs/fit/" + args['log-name']
+    logdir = "logs/fit/" + args['log_name']
     writer = SummaryWriter(logdir)
 
     angles = eval(args['angles'])
