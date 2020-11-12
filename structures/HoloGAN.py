@@ -135,7 +135,7 @@ class Generator(nn.Module):
         x = self.trans_conv5(x)
         style = self.mlp5(z).view(bs, 3, 2)  # Hard-code
         x = functional.adain_2d_(x, style)
-        out = F.tanh(x)
+        out = torch.tanh(x)
 
         return out
 
