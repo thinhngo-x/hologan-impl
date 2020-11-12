@@ -57,8 +57,10 @@ def prepare_data(path_to_data=PATH_TO_DATA, batch_size=BATCH_SIZE,
     else:
         sampler = None
     transform = transforms.Compose([
+        transforms.RandomHorizontalFlip(p=0.5),
         transforms.Resize(img_size),
-        transforms.ToTensor()
+        transforms.ToTensor(),
+        transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
     ])
     training_data = torchvision.datasets.ImageFolder(path_to_data, transform=transform)
     print("Length of data: ", len(training_data))
