@@ -33,7 +33,7 @@ def parse_arg():
     parser.add_argument('--log-name', type=str, default=now.strftime("%Y%m%d-%H%M%S"))
     parser.add_argument('--batch_size', type=str, default=8)
     parser.add_argument('--angles', type=str, default='[70, -70, 180, -180, 30, -30]')
-    parser.add_argument('--num_epochs', type=int, defaut=100)
+    parser.add_argument('--num_epochs', type=int, default=100)
     parser.add_argument('--lr_g', type=float, default=0.0002)
     parser.add_argument('--lr_d', type=float, default=0.0002)
     parser.add_argument('--seed', type=int, default=224)
