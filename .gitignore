@@ -133,3 +133,4 @@ dmypy.json
 
 # Logs
 /logs
+/checkpoints

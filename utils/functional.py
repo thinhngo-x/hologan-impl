@@ -134,12 +134,18 @@ def get_matrix_rot_3d(theta, mode):
         out[:, 1, 2] = -s
         out[:, 2, 1] = s
         out[:, 2, 2] = c
-    if mode == 'azimuth':
+    elif mode == 'azimuth':
         out[:, 0, 0] = c
         out[:, 0, 2] = -s
         out[:, 2, 0] = s
         out[:, 2, 2] = c
         out[:, 1, 1] = 1
+    elif mode == 'z':
+        out[:, 0, 0] = c
+        out[:, 0, 1] = -s
+        out[:, 1, 0] = c
+        out[:, 1, 1] = s
+        out[:, 2, 2] = 1
     return out
 
 
