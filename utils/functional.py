@@ -32,6 +32,7 @@ def matplotlib_imshow(img, one_channel=False):
     if one_channel:
         img = img.mean(dim=0)
     npimg = img.to('cpu').numpy()
+    npimg = np.clip(npimg, 0, 1)
     if one_channel:
         plt.imshow(npimg, cmap="Greys")
     else:
