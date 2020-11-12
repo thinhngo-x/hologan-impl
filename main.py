@@ -166,7 +166,7 @@ def save_checkpoint(optim_G, optim_D, model, epoch, name):
 
 def load_checkpoint(optim_G, optim_D, model, checkpoint_path):
     with open(Path(checkpoint_path), 'rb') as f:
-        checkpoint = torch.load(f)
+        checkpoint = torch.load(f, map_location=torch.device('cpu'))
     model.load_state_dict(checkpoint['model_state_dict'])
 
     optim_G.load_state_dict(checkpoint['optim_G'])
