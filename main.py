@@ -32,7 +32,7 @@ def parse_arg():
     parser = argparse.ArgumentParser(description="")
     parser.add_argument('--log-name', type=str, default=now.strftime("%Y%m%d-%H%M%S"))
     parser.add_argument('--batch_size', type=str, default=8)
-    parser.add_argument('--angles', type=str, default='[180, -180, 70, -70, 30, -30]')
+    parser.add_argument('--angles', type=str, default='[70, -70, 180, -180, 30, -30]')
     parser.add_argument('--num_epochs', type=int, defaut=100)
     parser.add_argument('--lr_g', type=float, default=0.0002)
     parser.add_argument('--lr_d', type=float, default=0.0002)
@@ -79,9 +79,9 @@ def train_one_epoch(dataloader, model: HoloGAN.Net, criterion, optim_G, optim_D,
         z /= torch.norm(z) * z_norm
 
         thetas_azm = torch.rand(bs, device=device) - 0.5
-        thetas_azm = thetas_azm * (angles[0] - angles[1]) / 2 + (angles[0] + angles[1]) / 2
+        thetas_azm = thetas_azm * (angles[2] - angles[3]) / 2 + (angles[2] + angles[3]) / 2
         thetas_elv = torch.rand(bs, device=device) - 0.5
-        thetas_elv = thetas_elv * (angles[2] - angles[3]) / 2 + (angles[2] + angles[3]) / 2
+        thetas_elv = thetas_elv * (angles[0] - angles[1]) / 2 + (angles[0] + angles[1]) / 2
         thetas_z = torch.rand(bs, device=device) - 0.5
         thetas_z = thetas_z * (angles[4] - angles[5]) / 2 + (angles[4] + angles[5]) / 2
 
