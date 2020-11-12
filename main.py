@@ -199,7 +199,7 @@ def main():
 
     if args['resume'] > 0:
         optim_G, optim_D, hologan, start_epoch = load_checkpoint(optim_G, optim_D,
-                                                                 model, args['checkpoint_path'])
+                                                                 hologan, args['checkpoint_path'])
         if start_epoch is None:
             start_epoch = args['resume']
     else:
