@@ -1,7 +1,7 @@
 """This is for training."""
 from pathlib import Path
 import os
-from barbar import Bar
+from tqdm import tqdm as Bar
 import argparse
 from datetime import datetime
 
@@ -70,6 +70,7 @@ def prepare_data(path_to_data=PATH_TO_DATA, batch_size=BATCH_SIZE,
 def train_one_epoch(dataloader, model: HoloGAN.Net, criterion, optim_G, optim_D, device,
                     writer, epoch, angles, print_step=50, z_norm=200, z_dim=128):
     """Train a model on the dataloader for one epoch."""
+    model.train()
     running_loss = [.0, .0, .0]
     num_iter = len(dataloader)
     for i, (imgs, _) in enumerate(Bar(dataloader)):

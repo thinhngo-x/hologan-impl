@@ -25,7 +25,7 @@ import sys
 from datetime import datetime
 
 from docopt import docopt
-from barbar import Bar
+from tqdm import tqdm as Bar
 
 from torchvision.utils import make_grid
 import torch
