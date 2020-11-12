@@ -105,6 +105,7 @@ class MLP(nn.Module):
             in_f = n_features[i]
             out_f = n_features[i + 1]
             modules.append(nn.Linear(in_f, out_f))
+            modules.append(nn.LeakyReLU())
         self.mlp = nn.Sequential(*modules)
 
     def forward(self, x):
