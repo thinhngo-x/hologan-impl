@@ -41,6 +41,7 @@ def parse_arg():
     parser.add_argument('--norm_generator', type=str, default='InstanceNorm')
     parser.add_argument('--subsample', type=int, default=None)
     parser.add_argument('--print_step', type=int, default=20)
+    parser.add_argument('--checkpoint_name', type=str, default='checkpoint.ptn')
     args = parser.parse_args()
     return args
 
@@ -150,8 +151,8 @@ def train_one_epoch(dataloader, model: HoloGAN.Net, criterion, optim_G, optim_D,
             running_loss = [.0, .0, .0]
 
 
-def save_checkpoint(optim_G, optim_D, model, epoch):
-    with open(Path('checkpoints/save.ptn'), 'wb') as f:
+def save_checkpoint(optim_G, optim_D, model, epoch, name):
+    with open(Path('checkpoints/' + name), 'wb') as f:
         torch.save({
             'model_state_dict': model.state_dict(),
             'optim_G': optim_G.state_dict(),
@@ -185,7 +186,7 @@ def main():
     for epoch in range(args['num_epochs']):
         train_one_epoch(dataloader, hologan, criterion, optim_G, optim_D,
                         device, writer, epoch, angles, print_step=args['print_step'])
-        save_checkpoint(optim_G, optim_D, hologan, epoch)
+        save_checkpoint(optim_G, optim_D, hologan, epoch, args['checkpoint_name'])
 
 
 if __name__ == '__main__':
