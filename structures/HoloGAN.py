@@ -86,7 +86,7 @@ class Generator(nn.Module):
         self.trans_conv2 = functional.trans_conv_3d_pad(128, 64, stride=2, bias=True)
         self.mlp2 = MLP([self.z_dim, 64 * 2])
         self.conv_3d = nn.Sequential(
-            nn.Conv3d(64, 64, 3, stride=1, padding=1)
+            nn.Conv3d(64, 64, 3, stride=1, padding=1),
             nn.Conv3d(64, 64, 3, stride=1, padding=1)
         )
         self.projection = Projection(64, 16, 1024)
