@@ -42,6 +42,8 @@ def parse_arg():
     parser.add_argument('--subsample', type=int, default=None)
     parser.add_argument('--print_step', type=int, default=20)
     parser.add_argument('--checkpoint_name', type=str, default='checkpoint.ptn')
+    parser.add_argument('--resume', type=int, default=0)
+    parser.add_argument('--checkpoint_path', type=str, default=None)
     args = parser.parse_args()
     return args
 
@@ -59,8 +61,7 @@ def prepare_data(path_to_data=PATH_TO_DATA, batch_size=BATCH_SIZE,
     transform = transforms.Compose([
         transforms.RandomHorizontalFlip(p=0.5),
         transforms.Resize(img_size),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
+        transforms.ToTensor()
     ])
     training_data = torchvision.datasets.ImageFolder(path_to_data, transform=transform)
     print("Length of data: ", len(training_data))
@@ -158,8 +159,24 @@ def save_checkpoint(optim_G, optim_D, model, epoch, name):
         torch.save({
             'model_state_dict': model.state_dict(),
             'optim_G': optim_G.state_dict(),
-            'optim_D': optim_D.state_dict()
+            'optim_D': optim_D.state_dict(),
+            'epoch': epoch
         }, f)
+
+
+def load_checkpoint(optim_G, optim_D, model, checkpoint_path):
+    with open(Path(checkpoint_path), 'rb') as f:
+        checkpoint = torch.load(f)
+    model.load_state_dict(checkpoint['model_state_dict'])
+
+    optim_G.load_state_dict(checkpoint['optim_G'])
+    optim_D.load_state_dict(checkpoint['optim_D'])
+    if 'epoch' in checkpoint.keys():
+        epoch = checkpoint['epoch']
+    else:
+        epoch = None
+
+    return optim_G, optim_D, model, epoch
 
 
 def main():
@@ -173,19 +190,29 @@ def main():
     else:
         device = torch.device('cpu')
 
-    hologan = HoloGAN.Net(128, (3, 128, 128)).to(device)
+    hologan = HoloGAN.Net(128, (3, 128, 128))
 
     criterion = HoloGAN.compute_loss
     dataloader = prepare_data(batch_size=args['batch_size'], subsample=args['subsample'])
     optim_G = optim.Adam(hologan.G.parameters(), lr=args['lr_g'])
     optim_D = optim.Adam(hologan.D.parameters(), lr=args['lr_d'])
 
+    if args['resume'] > 0:
+        optim_G, optim_D, hologan, start_epoch = load_checkpoint(optim_G, optim_D,
+                                                                 model, args['checkpoint_path'])
+        if start_epoch is None:
+            start_epoch = args['resume']
+    else:
+        start_epoch = 0
+
+    hologan.to(device)
+
     # Setup tensorboard
     logdir = "logs/fit/" + args['log_name']
     writer = SummaryWriter(logdir)
 
     angles = eval(args['angles'])
-    for epoch in range(args['num_epochs']):
+    for epoch in range(start_epoch, args['num_epochs']):
         train_one_epoch(dataloader, hologan, criterion, optim_G, optim_D,
                         device, writer, epoch, angles, print_step=args['print_step'])
         save_checkpoint(optim_G, optim_D, hologan, epoch, args['checkpoint_name'])

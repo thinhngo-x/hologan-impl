@@ -31,7 +31,6 @@ def matplotlib_imshow(img, one_channel=False):
     """Plot a torch Tensor as an image."""
     if one_channel:
         img = img.mean(dim=0)
-    img = (img + 1) / 2     # scale to [0, 1]
     npimg = img.to('cpu').numpy()
     if one_channel:
         plt.imshow(npimg, cmap="Greys")
