@@ -52,6 +52,7 @@ def prepare_data(path_to_data=PATH_TO_DATA, batch_size=BATCH_SIZE,
         idx = np.arange(5000)
         np.random.shuffle(idx)
         sampler = SubsetRandomSampler(idx[:subsample])
+        shuffle = False
     else:
         sampler = None
     transform = transforms.Compose([
