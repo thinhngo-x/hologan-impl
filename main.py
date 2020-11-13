@@ -173,7 +173,7 @@ def load_checkpoint(optim_G, optim_D, model, checkpoint_path):
     optim_G.load_state_dict(checkpoint['optim_G'])
     optim_D.load_state_dict(checkpoint['optim_D'])
     if 'epoch' in checkpoint.keys():
-        epoch = checkpoint['epoch']
+        epoch = checkpoint['epoch'] + 1
     else:
         epoch = None
 
