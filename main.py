@@ -80,9 +80,9 @@ def train_one_epoch(dataloader, model: HoloGAN.Net, criterion, optim_G, optim_D,
     """Train a model on the dataloader for one epoch."""
     model.train()
     running_loss = [.0, .0, .0]
-    running_loss_style = .0
-    running_loss_id = .0
-    running_loss_gan = .0
+    running_loss_G = [.0, .0, .0]
+    running_loss_D_real = [.0, .0, .0]
+    running_loss_D_fake = [.0, .0, .0]
     num_iter = len(dataloader)
     for i, (imgs, _) in enumerate(Bar(dataloader)):
         model.zero_grad()
@@ -149,26 +149,29 @@ def train_one_epoch(dataloader, model: HoloGAN.Net, criterion, optim_G, optim_D,
         running_loss = [
             rl + ls for rl, ls in zip(running_loss, [sum(lossD_real), sum(lossD_fake), sum(lossG)])
         ]
-        running_loss_gan += lossG[0]
-        running_loss_id += lossG[1]
-        running_loss_style += lossG[2]
+        for j in range(3):
+            running_loss_G[j] += lossG[i]
+            running_loss_D_fake[j] += lossD_fake[i]
+            running_loss_D_real[j] += lossD_real[i]
         if i % print_step == print_step - 1:
             # print(i)
             step = epoch * num_iter + i + 1
             writer.add_scalar("lossD/real", running_loss[0] / print_step, step)
             writer.add_scalar("lossD/fake", running_loss[1] / print_step, step)
             writer.add_scalar("lossG/lossG", running_loss[2] / print_step, step)
-            writer.add_scalar("lossG/GAN", running_loss_gan / print_step, step)
-            writer.add_scalar("lossG/Id", running_loss_id / print_step, step)
-            writer.add_scalar("lossG/Style", running_loss_style / print_step, step)
+            for j, name in enumerate(["gan", "id", "style"]):
+                writer.add_scalar("lossG/" + name, running_loss_G[j] / print_step, step)
+                writer.add_scalar("lossD_real/" + name, running_loss_D_real[j] / print_step, step)
+                writer.add_scalar("lossD_fake/" + name, running_loss_D_fake[j] / print_step, step)
             writer.add_figure("sample_image", functional.plot_sample_img(fake.detach()[0]),
                               global_step=epoch * num_iter + i + 1)
             img_grid = make_grid(imgs)
             writer.add_image("sample_batch", img_grid, epoch * num_iter + i + 1)
             running_loss = [.0, .0, .0]
-            running_loss_gan = .0
-            running_loss_id = .0
-            running_loss_style = .0
+            running_loss_G = [.0, .0, .0]
+            running_loss_D_real = [.0, .0, .0]
+            running_loss_D_fake = [.0, .0, .0]
+            num_iter = len(dataloader)
 
 
 def save_checkpoint(optim_G, optim_D, model, epoch, name):
