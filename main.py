@@ -46,7 +46,7 @@ def parse_arg():
     parser.add_argument('--checkpoint_path', type=str, default=None)
     parser.add_argument('--z_dim', type=int, default=200)
     parser.add_argument('--weights_loss', type=str, default='[1, 1, 1]')
-    parser.add_argument('--data_path', type=str, default='data/compcar')
+    parser.add_argument('--data_path', type=str, default='data/compcars')
     args = parser.parse_args()
     return args
 
