@@ -62,6 +62,7 @@ def prepare_data(path_to_data=PATH_TO_DATA, batch_size=BATCH_SIZE,
         sampler = None
     transform = transforms.Compose([
         transforms.RandomHorizontalFlip(p=0.5),
+        transforms.RandomRotation((-20, 20)),
         transforms.Resize(img_size),
         transforms.ToTensor(),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
