@@ -114,7 +114,7 @@ def train_one_epoch(dataloader, model: HoloGAN.Net, criterion, optim_G, optim_D,
         model.D.zero_grad()
 
         real_out = model.D(imgs)
-        labels = HoloGAN.gen_labels(bs, True, device, z)
+        labels = HoloGAN.gen_labels(bs, True, device, real_out[2])
 
         lossD_real = criterion(real_out, labels, weights_loss)
         sum(lossD_real).backward()
@@ -131,7 +131,10 @@ def train_one_epoch(dataloader, model: HoloGAN.Net, criterion, optim_G, optim_D,
         lossD_fake = [ls.mean().item() for ls in lossD_fake]
 
         lossD = [r + f for r, f in zip(lossD_real, lossD_fake)]
-        optim_D.step()
+
+        # Update D's parameters after 2 steps
+        if i % 2 == 0:
+            optim_D.step()
 
         ###############
         # Update G network: maximize log(D(G(z)))
@@ -156,9 +159,9 @@ def train_one_epoch(dataloader, model: HoloGAN.Net, criterion, optim_G, optim_D,
         if i % print_step == print_step - 1:
             # print(i)
             step = epoch * num_iter + i + 1
-            writer.add_scalar("lossD/real", running_loss[0] / print_step, step)
-            writer.add_scalar("lossD/fake", running_loss[1] / print_step, step)
-            writer.add_scalar("lossG/lossG", running_loss[2] / print_step, step)
+            writer.add_scalar("lossD_real/loss_sum", running_loss[0] / print_step, step)
+            writer.add_scalar("lossD_fake/loss_sum", running_loss[1] / print_step, step)
+            writer.add_scalar("lossG/loss_sum", running_loss[2] / print_step, step)
             for j, name in enumerate(["gan", "id", "style"]):
                 writer.add_scalar("lossG/" + name, running_loss_G[j] / print_step, step)
                 writer.add_scalar("lossD_real/" + name, running_loss_D_real[j] / print_step, step)

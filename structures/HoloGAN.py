@@ -224,6 +224,6 @@ class Discriminator(nn.Module):
 
         d_gan = self.fc(x)
         d_style = torch.cat((d_s0, d_s1, d_s2, d_s3, d_s4), dim=1)
-        d_id = self.reconstruct(x)
+        d_id = torch.tanh(self.reconstruct(x))
 
         return d_gan, d_id, d_style
