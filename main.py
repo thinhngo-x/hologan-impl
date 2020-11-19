@@ -47,6 +47,7 @@ def parse_arg():
     parser.add_argument('--z_dim', type=int, default=200)
     parser.add_argument('--weights_loss', type=str, default='[1, 1, 1]')
     parser.add_argument('--data_path', type=str, default='data/compcars')
+    parser.add_argument('--n_steps_D', type=int, default=1)
     args = parser.parse_args()
     return args
 
@@ -77,7 +78,7 @@ def prepare_data(path_to_data=PATH_TO_DATA, batch_size=BATCH_SIZE,
 
 
 def train_one_epoch(dataloader, model: HoloGAN.Net, criterion, optim_G, optim_D, device,
-                    writer, epoch, angles, weights_loss, print_step=50, z_dim=128):
+                    writer, epoch, angles, weights_loss, n_steps_D, print_step=50, z_dim=128):
     """Train a model on the dataloader for one epoch."""
     model.train()
     running_loss = [.0, .0, .0]
@@ -134,7 +135,7 @@ def train_one_epoch(dataloader, model: HoloGAN.Net, criterion, optim_G, optim_D,
         lossD = [r + f for r, f in zip(lossD_real, lossD_fake)]
 
         # Update D's parameters after 2 steps
-        if i % 2 == 0:
+        if i % n_steps_D == 0:
             optim_D.step()
 
         ###############
@@ -237,7 +238,7 @@ def main():
     angles = eval(args['angles'])
     for epoch in range(start_epoch, args['num_epochs']):
         train_one_epoch(dataloader, hologan, criterion, optim_G, optim_D,
-                        device, writer, epoch, angles, eval(args['weights_loss']),
+                        device, writer, epoch, angles, eval(args['weights_loss']), args['n_steps_D'],
                         z_dim=args['z_dim'], print_step=args['print_step'])
         save_checkpoint(optim_G, optim_D, hologan, epoch, args['checkpoint_name'])
 
