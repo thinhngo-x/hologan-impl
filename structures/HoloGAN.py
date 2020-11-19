@@ -22,9 +22,9 @@ def compute_loss(prediction, label):
     @returns loss (List) A list of 3 losses (loss_gan, loss_id, loss_style)
     """
     # print(prediction)
-    loss_gan = F.binary_cross_entropy(prediction[0], label[0])
+    loss_gan = F.binary_cross_entropy_with_logits(prediction[0], label[0])
     loss_id = F.mse_loss(prediction[1], label[1])
-    loss_style = F.binary_cross_entropy(prediction[2].view(-1), label[2].view(-1))
+    loss_style = F.binary_cross_entropy_with_logits(prediction[2].view(-1), label[2].view(-1))
 
     return [loss_gan, loss_id, loss_style]
 
