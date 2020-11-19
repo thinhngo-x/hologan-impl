@@ -77,6 +77,9 @@ def train_one_epoch(dataloader, model: HoloGAN.Net, criterion, optim_G, optim_D,
     """Train a model on the dataloader for one epoch."""
     model.train()
     running_loss = [.0, .0, .0]
+    running_loss_style = .0
+    running_loss_id = .0
+    running_loss_gan = .0
     num_iter = len(dataloader)
     for i, (imgs, _) in enumerate(Bar(dataloader)):
         model.zero_grad()
@@ -143,11 +146,18 @@ def train_one_epoch(dataloader, model: HoloGAN.Net, criterion, optim_G, optim_D,
         running_loss = [
             rl + ls for rl, ls in zip(running_loss, [sum(lossD_real), sum(lossD_fake), sum(lossG)])
         ]
+        running_loss_gan += lossG[0]
+        running_loss_id += lossG[1]
+        running_loss_style += lossG[2]
         if i % print_step == print_step - 1:
             # print(i)
-            writer.add_scalar("lossD_real", running_loss[0] / print_step, epoch * num_iter + i + 1)
-            writer.add_scalar("lossD_fake", running_loss[1] / print_step, epoch * num_iter + i + 1)
-            writer.add_scalar("lossG", running_loss[2] / print_step, epoch * num_iter + i + 1)
+            step = epoch * num_iters + i + 1
+            writer.add_scalar("lossD/real", running_loss[0] / print_step, step)
+            writer.add_scalar("lossD/fake", running_loss[1] / print_step, step)
+            writer.add_scalar("lossG/lossG", running_loss[2] / print_step, step)
+            writer.add_scalar("lossG/GAN", running_loss_gan / print_step, step)
+            writer.add_scalar("lossG/Id", running_loss_id / print_step, step)
+            writer.add_scalar("lossG/Style", running_loss_style / print_step, step)
             writer.add_figure("sample_image", functional.plot_sample_img(fake.detach()[0]),
                               global_step=epoch * num_iter + i + 1)
             img_grid = make_grid(imgs)
