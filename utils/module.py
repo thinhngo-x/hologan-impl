@@ -180,6 +180,5 @@ class BLClassifier(nn.Module):
 
     def forward(self, x):
         out = self.linear(x)
-        out = torch.sigmoid(out)
 
         return out

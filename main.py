@@ -73,7 +73,7 @@ def prepare_data(path_to_data=PATH_TO_DATA, batch_size=BATCH_SIZE,
 
 
 def train_one_epoch(dataloader, model: HoloGAN.Net, criterion, optim_G, optim_D, device,
-                    writer, epoch, angles, print_step=50, z_norm=200, z_dim=128):
+                    writer, epoch, angles, print_step=50, z_dim=128):
     """Train a model on the dataloader for one epoch."""
     model.train()
     running_loss = [.0, .0, .0]
@@ -86,7 +86,7 @@ def train_one_epoch(dataloader, model: HoloGAN.Net, criterion, optim_G, optim_D,
 
         bs, c, h, w = imgs.shape
         z = torch.rand((bs, z_dim), device=device)
-        z /= torch.norm(z) * z_norm
+        z = z * 2 - 1
 
         thetas_azm = torch.rand(bs, device=device) - 0.5
         thetas_azm = thetas_azm * (angles[2] - angles[3]) / 2 + (angles[2] + angles[3]) / 2
@@ -204,7 +204,7 @@ def main():
     else:
         device = torch.device('cpu')
 
-    hologan = HoloGAN.Net(128, (3, 128, 128)).to(device)
+    hologan = HoloGAN.Net(200, (3, 128, 128)).to(device)
 
     criterion = HoloGAN.compute_loss
     dataloader = prepare_data(batch_size=args['batch_size'], subsample=args['subsample'])
