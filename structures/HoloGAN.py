@@ -81,20 +81,20 @@ class Generator(nn.Module):
         self.z_dim = latent_vector_size
 
         self.constant = nn.Parameter(torch.rand((1, 512, 4, 4, 4)) * 2 - 1)
-        self.trans_conv1 = ResBlock(512, 128, stride=2, norm_layer=nn.InstanceNorm3d, conv=functional.trans_conv_3d_pad)
+        self.trans_conv1 = ResBlock(512, 128, stride=2, norm_layer=nn.BatchNorm3d, conv=functional.trans_conv_3d_pad)
         self.mlp1 = MLP([self.z_dim, 128 * 2])
-        self.trans_conv2 = ResBlock(128, 64, stride=2, norm_layer=nn.InstanceNorm3d, conv=functional.trans_conv_3d_pad)
+        self.trans_conv2 = ResBlock(128, 64, stride=2, norm_layer=nn.BatchNorm3d, conv=functional.trans_conv_3d_pad)
         self.mlp2 = MLP([self.z_dim, 64 * 2])
-        self.conv_3d = ResBlock(64, 64, stride=1, norm_layer=nn.InstanceNorm3d, conv=nn.Conv3d)
+        self.conv_3d = ResBlock(64, 64, stride=1, norm_layer=nn.BatchNorm3d, conv=nn.Conv3d)
         self.projection = Projection(64, 16, 1024)
-        self.trans_conv3 = ResBlock(1024, 256, stride=2, norm_layer=nn.InstanceNorm2d, conv=functional.trans_conv_2d_pad)
+        self.trans_conv3 = ResBlock(1024, 256, stride=2, norm_layer=nn.BatchNorm2d, conv=functional.trans_conv_2d_pad)
         self.mlp3 = MLP([self.z_dim, 256 * 2])
-        self.trans_conv4 = ResBlock(256, 64, stride=2, norm_layer=nn.InstanceNorm2d, conv=functional.trans_conv_2d_pad)
+        self.trans_conv4 = ResBlock(256, 64, stride=2, norm_layer=nn.BatchNorm2d, conv=functional.trans_conv_2d_pad)
         self.mlp4 = MLP([self.z_dim, 64 * 2])
-        self.trans_conv5 = ResBlock(64, 32, stride=2, norm_layer=nn.InstanceNorm2d, conv=functional.trans_conv_2d_pad)
+        self.trans_conv5 = ResBlock(64, 32, stride=2, norm_layer=nn.BatchNorm2d, conv=functional.trans_conv_2d_pad)
         self.mlp5 = MLP([self.z_dim, 32 * 2])
 
-        self.conv_2d = ResBlock(32, 3, stride=1, norm_layer=nn.InstanceNorm2d, conv=nn.Conv2d)
+        self.conv_2d = ResBlock(32, 3, stride=1, norm_layer=nn.BatchNorm2d, conv=nn.Conv2d)
 
     def forward(self, z, rot_matrix):
         """Forward.
