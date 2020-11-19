@@ -163,6 +163,9 @@ def train_one_epoch(dataloader, model: HoloGAN.Net, criterion, optim_G, optim_D,
             img_grid = make_grid(imgs)
             writer.add_image("sample_batch", img_grid, epoch * num_iter + i + 1)
             running_loss = [.0, .0, .0]
+            running_loss_gan = .0
+            running_loss_id = .0
+            running_loss_style = .0
 
 
 def save_checkpoint(optim_G, optim_D, model, epoch, name):
