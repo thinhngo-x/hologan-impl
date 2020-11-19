@@ -150,9 +150,9 @@ def train_one_epoch(dataloader, model: HoloGAN.Net, criterion, optim_G, optim_D,
             rl + ls for rl, ls in zip(running_loss, [sum(lossD_real), sum(lossD_fake), sum(lossG)])
         ]
         for j in range(3):
-            running_loss_G[j] += lossG[i]
-            running_loss_D_fake[j] += lossD_fake[i]
-            running_loss_D_real[j] += lossD_real[i]
+            running_loss_G[j] += lossG[j]
+            running_loss_D_fake[j] += lossD_fake[j]
+            running_loss_D_real[j] += lossD_real[j]
         if i % print_step == print_step - 1:
             # print(i)
             step = epoch * num_iter + i + 1
