@@ -64,7 +64,7 @@ def prepare_data(path_to_data=PATH_TO_DATA, batch_size=BATCH_SIZE,
         sampler = None
     transform = transforms.Compose([
         transforms.RandomHorizontalFlip(p=0.5),
-        transforms.RandomRotation((-20, 20)),
+        # transforms.RandomRotation((-20, 20)),
         transforms.Resize(img_size),
         transforms.ToTensor(),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
@@ -134,7 +134,7 @@ def train_one_epoch(dataloader, model: HoloGAN.Net, criterion, optim_G, optim_D,
 
         lossD = [r + f for r, f in zip(lossD_real, lossD_fake)]
 
-        # Update D's parameters after 2 steps
+        # Update D's parameters after n_steps_D
         if i % n_steps_D == 0:
             optim_D.step()
 
