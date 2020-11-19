@@ -151,7 +151,7 @@ def train_one_epoch(dataloader, model: HoloGAN.Net, criterion, optim_G, optim_D,
         running_loss_style += lossG[2]
         if i % print_step == print_step - 1:
             # print(i)
-            step = epoch * num_iters + i + 1
+            step = epoch * num_iter + i + 1
             writer.add_scalar("lossD/real", running_loss[0] / print_step, step)
             writer.add_scalar("lossD/fake", running_loss[1] / print_step, step)
             writer.add_scalar("lossG/lossG", running_loss[2] / print_step, step)
