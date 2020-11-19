@@ -41,12 +41,12 @@ def gen_labels(batch_size: int, label: bool, device: torch.device, z: torch.Tens
 
     @returns lb_gan (Tensor) GAN label of shape (bs, 1)
              lb_id (Tensor) = z
-             lb_style (Tensor) Style label of shape (bs, 5)
+             lb_style (Tensor) Style label of shape (bs, 4)
     """
     lb = label * 1
     lb_gan = torch.full((batch_size, 1), lb, dtype=torch.float, device=device)
     lb_id = z
-    lb_style = torch.full((batch_size, 5), lb, dtype=torch.float, device=device)
+    lb_style = torch.full((batch_size, 4), lb, dtype=torch.float, device=device)
 
     return lb_gan, lb_id, lb_style
 
@@ -160,7 +160,6 @@ class Discriminator(nn.Module):
         else:
             self.spec_norm = spec_norm
 
-        self.norm0 = norm_layer(3)
         self.conv1 = self.spec_norm(nn.Conv2d(3, 64, kernel_size=3, stride=2, padding=1, bias=False))  # 64x64
         self.conv2 = ResBlock(64, 128, stride=2, spec_norm=spec_norm, norm_layer=norm_layer)  # 32x32
         self.norm2 = norm_layer(128)
@@ -193,10 +192,6 @@ class Discriminator(nn.Module):
         """
         bs = x.shape[0]
 
-        mean_std = functional.channel_wise_mean_std_2d(x)
-        d_s0 = self.style_classifier_3(mean_std.view(bs, -1))
-        x = F.leaky_relu(self.norm0(x))
-
         x = self.conv1(x)
         x = F.leaky_relu(x)
 
@@ -223,7 +218,7 @@ class Discriminator(nn.Module):
         x = x.view(bs, -1)
 
         d_gan = self.fc(x)
-        d_style = torch.cat((d_s0, d_s1, d_s2, d_s3, d_s4), dim=1)
+        d_style = torch.cat((d_s1, d_s2, d_s3, d_s4), dim=1)
         d_id = torch.tanh(self.reconstruct(x))
 
         return d_gan, d_id, d_style
