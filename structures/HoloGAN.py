@@ -13,18 +13,19 @@ from torch.nn.utils import spectral_norm
 from typing import List, Tuple
 
 
-def compute_loss(prediction, label):
+def compute_loss(prediction, label, weights):
     """Compute loss of the model HoloGAN.
 
     @param prediction (Tuple) A tuple of 3 outputs (d_gan, d_id, d_style)
     @param label (Tuple) A tuple of 3 labels (lb_gan, lb_id, lb_style)
+    @param weights (List) A list of 3 weights corresponding to 3 types of loss (loss_gan, loss_id, loss_style)
 
     @returns loss (List) A list of 3 losses (loss_gan, loss_id, loss_style)
     """
     # print(prediction)
-    loss_gan = F.binary_cross_entropy_with_logits(prediction[0], label[0])
-    loss_id = F.mse_loss(prediction[1], label[1])
-    loss_style = F.binary_cross_entropy_with_logits(prediction[2].view(-1), label[2].view(-1))
+    loss_gan = weights[0] * F.binary_cross_entropy_with_logits(prediction[0], label[0])
+    loss_id = weights[1] * F.mse_loss(prediction[1], label[1])
+    loss_style = weights[2] * F.binary_cross_entropy_with_logits(prediction[2].view(-1), label[2].view(-1))
 
     return [loss_gan, loss_id, loss_style]
 

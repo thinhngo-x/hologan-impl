@@ -45,6 +45,7 @@ def parse_arg():
     parser.add_argument('--resume', type=int, default=0)
     parser.add_argument('--checkpoint_path', type=str, default=None)
     parser.add_argument('--z_dim', type=int, default=200)
+    parser.add_argument('--weights_loss', type=str, default='[1, 1, 1]')
     args = parser.parse_args()
     return args
 
@@ -74,7 +75,7 @@ def prepare_data(path_to_data=PATH_TO_DATA, batch_size=BATCH_SIZE,
 
 
 def train_one_epoch(dataloader, model: HoloGAN.Net, criterion, optim_G, optim_D, device,
-                    writer, epoch, angles, print_step=50, z_dim=128):
+                    writer, epoch, angles, weights_loss, print_step=50, z_dim=128):
     """Train a model on the dataloader for one epoch."""
     model.train()
     running_loss = [.0, .0, .0]
@@ -114,7 +115,7 @@ def train_one_epoch(dataloader, model: HoloGAN.Net, criterion, optim_G, optim_D,
         real_out = model.D(imgs)
         labels = HoloGAN.gen_labels(bs, True, device, z)
 
-        lossD_real = criterion(real_out, labels)
+        lossD_real = criterion(real_out, labels, weights_loss)
         sum(lossD_real).backward()
         lossD_real = [ls.mean().item() for ls in lossD_real]
 
@@ -124,7 +125,7 @@ def train_one_epoch(dataloader, model: HoloGAN.Net, criterion, optim_G, optim_D,
         fake_out = model.D(fake.detach())
         labels = HoloGAN.gen_labels(bs, False, device, z)
 
-        lossD_fake = criterion(fake_out, labels)
+        lossD_fake = criterion(fake_out, labels, weights_loss)
         sum(lossD_fake).backward()
         lossD_fake = [ls.mean().item() for ls in lossD_fake]
 
@@ -139,7 +140,7 @@ def train_one_epoch(dataloader, model: HoloGAN.Net, criterion, optim_G, optim_D,
         out = model.D(fake)
         labels = HoloGAN.gen_labels(bs, True, device, z)
 
-        lossG = criterion(out, labels)
+        lossG = criterion(out, labels, weights_loss)
         sum(lossG).backward()
         lossG = [ls.mean().item() for ls in lossG]
         optim_G.step()
@@ -227,7 +228,7 @@ def main():
     angles = eval(args['angles'])
     for epoch in range(start_epoch, args['num_epochs']):
         train_one_epoch(dataloader, hologan, criterion, optim_G, optim_D,
-                        device, writer, epoch, angles,
+                        device, writer, epoch, angles, eval(args['weights_loss']),
                         z_dim=args['z_dim'], print_step=args['print_step'])
         save_checkpoint(optim_G, optim_D, hologan, epoch, args['checkpoint_name'])
 
