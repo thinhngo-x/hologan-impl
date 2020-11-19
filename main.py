@@ -44,6 +44,7 @@ def parse_arg():
     parser.add_argument('--checkpoint_name', type=str, default='checkpoint.ptn')
     parser.add_argument('--resume', type=int, default=0)
     parser.add_argument('--checkpoint_path', type=str, default=None)
+    parser.add_argument('--z_dim', type=int, default=200)
     args = parser.parse_args()
     return args
 
@@ -204,7 +205,7 @@ def main():
     else:
         device = torch.device('cpu')
 
-    hologan = HoloGAN.Net(200, (3, 128, 128)).to(device)
+    hologan = HoloGAN.Net(args['z_dim'], (3, 128, 128)).to(device)
 
     criterion = HoloGAN.compute_loss
     dataloader = prepare_data(batch_size=args['batch_size'], subsample=args['subsample'])
@@ -226,7 +227,8 @@ def main():
     angles = eval(args['angles'])
     for epoch in range(start_epoch, args['num_epochs']):
         train_one_epoch(dataloader, hologan, criterion, optim_G, optim_D,
-                        device, writer, epoch, angles, print_step=args['print_step'])
+                        device, writer, epoch, angles,
+                        z_dim=args['z_dim'], print_step=args['print_step'])
         save_checkpoint(optim_G, optim_D, hologan, epoch, args['checkpoint_name'])
 
 
