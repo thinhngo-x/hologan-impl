@@ -114,7 +114,7 @@ def train_one_epoch(dataloader, model: HoloGAN.Net, criterion, optim_G, optim_D,
         model.D.zero_grad()
 
         real_out = model.D(imgs)
-        labels = HoloGAN.gen_labels(bs, True, device, real_out[2])
+        labels = HoloGAN.gen_labels(bs, True, device, real_out[1])
 
         lossD_real = criterion(real_out, labels, weights_loss)
         sum(lossD_real).backward()
