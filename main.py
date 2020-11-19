@@ -46,6 +46,7 @@ def parse_arg():
     parser.add_argument('--checkpoint_path', type=str, default=None)
     parser.add_argument('--z_dim', type=int, default=200)
     parser.add_argument('--weights_loss', type=str, default='[1, 1, 1]')
+    parser.add_argument('--data_path', type=str, default='data/compcar')
     args = parser.parse_args()
     return args
 
@@ -216,7 +217,8 @@ def main():
     hologan = HoloGAN.Net(args['z_dim'], (3, 128, 128)).to(device)
 
     criterion = HoloGAN.compute_loss
-    dataloader = prepare_data(batch_size=args['batch_size'], subsample=args['subsample'])
+    dataloader = prepare_data(batch_size=args['batch_size'], subsample=args['subsample'],
+                              path_to_data=args['data_path'])
     optim_G = optim.Adam(hologan.G.parameters(), lr=args['lr_g'], betas=(0.5, 0.999))
     optim_D = optim.Adam(hologan.D.parameters(), lr=args['lr_d'], betas=(0.5, 0.999))
 
