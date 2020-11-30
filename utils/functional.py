@@ -38,8 +38,8 @@ def gen_sample_images(model, z, thetas_azm, thetas_elv, device):
     """
     bs = len(thetas_azm)
 
-    thetas_azm = torch.Tensor(thetas_azm, device).view(bs, 1)
-    thetas_elv = torch.Tensor(thetas_elv, device).view(bs, 1)
+    thetas_azm = torch.Tensor(thetas_azm, device=device).view(bs, 1)
+    thetas_elv = torch.Tensor(thetas_elv, device=device).view(bs, 1)
     rot_mat = get_matrix_rot_3d(thetas_azm, 'azimuth')
     rot_mat_elv = get_matrix_rot_3d(thetas_elv, 'elevation')
     rot_mat[:, :3, :3] = torch.matmul(rot_mat[:, :3, :3], rot_mat_elv[:, :3, :3])
