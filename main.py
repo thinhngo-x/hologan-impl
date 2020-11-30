@@ -78,7 +78,7 @@ def prepare_data(path_to_data=PATH_TO_DATA, batch_size=BATCH_SIZE,
 
 
 def train_one_epoch(dataloader, model: HoloGAN.Net, criterion, optim_G, optim_D, device,
-                    writer, epoch, angles, weights_loss, n_steps_D, print_step=50, z_dim):
+                    writer, epoch, angles, weights_loss, n_steps_D, z_dim, print_step=50):
     """Train a model on the dataloader for one epoch."""
     model.train()
     running_loss = [.0, .0, .0]
