@@ -510,6 +510,28 @@ def sanity_check_for_rigid_transform_3d():
     else:
         print("Passed test 2!")
 
+    a = a.view(1, 1, 1, 3, 3)
+    theta = torch.Tensor([90])
+    theta = functional.get_matrix_rot_3d(theta, 'z')
+    theta = theta.view(1, 3, 4)
+    res = functional.rigid_transform_3d_(a, theta, align_corners=False, mode='bilinear')
+    truth = torch.Tensor(
+        [[1, 0, 0],
+         [1, 1, 0],
+         [1, 0, 0]]
+    )
+    truth = truth.view(1, 1, 1, 3, 3)
+    if res.shape != truth.shape:
+        print("Failed at checking shape of output!")
+        print("Expected shape: ", truth.shape)
+        print("But got: ", res.shape)
+    elif torch.norm(res - truth) > 1e-2:
+        print("Failed at checking value of output!")
+        print("Expected: \n", truth)
+        print("But got: \n", res)
+    else:
+        print("Passed test 3!")
+
 
 def sanity_check_for_HoloGenerator():
     """Test class Generator in HoloGAN.py."""

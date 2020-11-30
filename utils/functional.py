@@ -5,6 +5,7 @@ import sys
 import torch
 from torch import nn
 import torch.nn.functional as F
+from torchvision.utils import make_grid
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -25,6 +26,28 @@ def channel_wise_mean_std_2d(x, unbiased=False):
     out = torch.cat((mean, std), dim=1)
 
     return out
+
+
+def gen_sample_images(model, z, thetas_azm, thetas_elv, device):
+    """Generate sample images.
+
+    @param thetas_azm (List) Azimuth angles
+    @param thetas_elevation (List) Elevation angles
+
+    @returns make_grid
+    """
+    bs = len(thetas_azm)
+
+    thetas_azm = torch.Tensor(thetas_azm, device).view(bs, 1)
+    thetas_elv = torch.Tensor(thetas_elv, device).view(bs, 1)
+    rot_mat = get_matrix_rot_3d(thetas_azm, 'azimuth')
+    rot_mat_elv = get_matrix_rot_3d(thetas_elv, 'elevation')
+    rot_mat[:, :3, :3] = torch.matmul(rot_mat[:, :3, :3], rot_mat_elv[:, :3, :3])
+
+    fake = model.G(z, rot_mat)
+    fake = fake * 2 - 1
+
+    return make_grid(fake)
 
 
 def matplotlib_imshow(img, one_channel=False):
@@ -143,8 +166,8 @@ def get_matrix_rot_3d(theta, mode):
     elif mode == 'z':
         out[:, 0, 0] = c
         out[:, 0, 1] = -s
-        out[:, 1, 0] = c
-        out[:, 1, 1] = s
+        out[:, 1, 1] = c
+        out[:, 1, 0] = s
         out[:, 2, 2] = 1
     return out
 

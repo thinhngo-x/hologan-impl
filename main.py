@@ -93,11 +93,11 @@ def train_one_epoch(dataloader, model: HoloGAN.Net, criterion, optim_G, optim_D,
         z = torch.rand((bs, z_dim), device=device)
         z = z * 2 - 1
 
-        thetas_azm = torch.rand(bs, device=device) - 0.5
+        thetas_azm = torch.rand(bs, device=device) * 2 - 1
         thetas_azm = thetas_azm * (angles[2] - angles[3]) / 2 + (angles[2] + angles[3]) / 2
-        thetas_elv = torch.rand(bs, device=device) - 0.5
+        thetas_elv = torch.rand(bs, device=device) * 2 - 1
         thetas_elv = thetas_elv * (angles[0] - angles[1]) / 2 + (angles[0] + angles[1]) / 2
-        thetas_z = torch.rand(bs, device=device) - 0.5
+        thetas_z = torch.rand(bs, device=device) * 2 - 1
         thetas_z = thetas_z * (angles[4] - angles[5]) / 2 + (angles[4] + angles[5]) / 2
 
         rot_mat_z = functional.get_matrix_rot_3d(thetas_z, 'z')
@@ -168,7 +168,11 @@ def train_one_epoch(dataloader, model: HoloGAN.Net, criterion, optim_G, optim_D,
                 writer.add_scalar("lossG/" + name, running_loss_G[j] / print_step, step)
                 writer.add_scalar("lossD_real/" + name, running_loss_D_real[j] / print_step, step)
                 writer.add_scalar("lossD_fake/" + name, running_loss_D_fake[j] / print_step, step)
-            writer.add_figure("sample_image", functional.plot_sample_img(fake.detach()[0]),
+            sample_image = functional.gen_sample_images(model, z,
+                                                        [0, 90, 180, -90, -10, 10],
+                                                        [0, 0, 0, 0, -20, 20],
+                                                        device)
+            writer.add_figure("sample_image", sample_image,
                               global_step=epoch * num_iter + i + 1)
             img_grid = make_grid(imgs)
             # writer.add_image("sample_batch", img_grid, epoch * num_iter + i + 1)
