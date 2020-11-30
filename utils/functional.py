@@ -46,6 +46,7 @@ def gen_sample_images(model, z, thetas_azm, thetas_elv, device):
 
     fake = model.G(z, rot_mat)
     fake = fake * 2 - 1
+    fake = fake.cpu()
 
     return make_grid(fake)
 
