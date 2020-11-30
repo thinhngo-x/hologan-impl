@@ -78,7 +78,7 @@ def prepare_data(path_to_data=PATH_TO_DATA, batch_size=BATCH_SIZE,
 
 
 def train_one_epoch(dataloader, model: HoloGAN.Net, criterion, optim_G, optim_D, device,
-                    writer, epoch, angles, weights_loss, n_steps_D, print_step=50, z_dim=128):
+                    writer, epoch, angles, weights_loss, n_steps_D, print_step=50, z_dim):
     """Train a model on the dataloader for one epoch."""
     model.train()
     running_loss = [.0, .0, .0]
@@ -168,7 +168,7 @@ def train_one_epoch(dataloader, model: HoloGAN.Net, criterion, optim_G, optim_D,
                 writer.add_scalar("lossG/" + name, running_loss_G[j] / print_step, step)
                 writer.add_scalar("lossD_real/" + name, running_loss_D_real[j] / print_step, step)
                 writer.add_scalar("lossD_fake/" + name, running_loss_D_fake[j] / print_step, step)
-            sample_image = functional.gen_sample_images(model, z[0],
+            sample_image = functional.gen_sample_images(model, z_dim,
                                                         [0, 90, 180, -90, -10, 10],
                                                         [0, 0, 0, 0, -20, 20],
                                                         device)
