@@ -172,8 +172,8 @@ def train_one_epoch(dataloader, model: HoloGAN.Net, criterion, optim_G, optim_D,
                                                         [0, 90, 180, -90, -10, 10],
                                                         [0, 0, 0, 0, -20, 20],
                                                         device)
-            writer.add_figure("sample_image", sample_image,
-                              global_step=epoch * num_iter + i + 1)
+            writer.add_image("sample_image", sample_image,
+                             global_step=epoch * num_iter + i + 1)
             img_grid = make_grid(imgs)
             # writer.add_image("sample_batch", img_grid, epoch * num_iter + i + 1)
             running_loss = [.0, .0, .0]
