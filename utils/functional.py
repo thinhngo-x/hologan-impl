@@ -47,7 +47,7 @@ def gen_sample_images(model, z_dim, thetas_azm, thetas_elv, device):
     z = torch.rand((bs, z_dim), device=device)
 
     fake = model.G(z, rot_mat.to(device))
-    fake = fake * 2 - 1
+    fake = (fake + 1) / 2
     fake = fake.cpu()
 
     return make_grid(fake)
