@@ -28,7 +28,7 @@ def channel_wise_mean_std_2d(x, unbiased=False):
     return out
 
 
-def gen_sample_images(model, z, thetas_azm, thetas_elv, device):
+def gen_sample_images(model, z_dim, thetas_azm, thetas_elv, device):
     """Generate sample images.
 
     @param thetas_azm (List) Azimuth angles
@@ -38,11 +38,13 @@ def gen_sample_images(model, z, thetas_azm, thetas_elv, device):
     """
     bs = len(thetas_azm)
 
-    thetas_azm = torch.Tensor(thetas_azm)
-    thetas_elv = torch.Tensor(thetas_elv)
+    thetas_azm = torch.Tensor(thetas_azm).view(bs)
+    thetas_elv = torch.Tensor(thetas_elv).view(bs)
     rot_mat = get_matrix_rot_3d(thetas_azm, 'azimuth')
     rot_mat_elv = get_matrix_rot_3d(thetas_elv, 'elevation')
     rot_mat[:, :3, :3] = torch.matmul(rot_mat[:, :3, :3], rot_mat_elv[:, :3, :3])
+
+    z = torch.rand((bs, z_dim), device=device)
 
     fake = model.G(z, rot_mat.to(device))
     fake = fake * 2 - 1
