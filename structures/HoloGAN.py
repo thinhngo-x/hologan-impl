@@ -229,7 +229,7 @@ class Discriminator(nn.Module):
 
         x = x.view(bs, -1)
 
-        print(x.shape)
+        # print(x.shape)
         d_gan = self.fc(x)
         d_style = torch.cat((d_s1, d_s2, d_s3, d_s4), dim=1)
         d_id = torch.tanh(self.reconstruct(x))
