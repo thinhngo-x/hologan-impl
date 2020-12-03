@@ -47,6 +47,7 @@ def parse_arg():
     parser.add_argument('--z_dim', type=int, default=200)
     parser.add_argument('--weights_loss', type=str, default='[1, 1, 1]')
     parser.add_argument('--data_path', type=str, default='data/compcars')
+    parser.add_argument('--img_size', type=str, default='(3, 128, 128)')
     parser.add_argument('--n_steps_D', type=int, default=1)
     args = parser.parse_args()
     return args
@@ -219,7 +220,7 @@ def main():
     else:
         device = torch.device('cpu')
 
-    hologan = HoloGAN.Net(args['z_dim'], (3, 128, 128)).to(device)
+    hologan = HoloGAN.Net(args['z_dim'], eval(args['img_size'])).to(device)
 
     criterion = HoloGAN.compute_loss
     dataloader = prepare_data(batch_size=args['batch_size'], subsample=args['subsample'],
