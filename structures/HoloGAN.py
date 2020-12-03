@@ -182,14 +182,14 @@ class Discriminator(nn.Module):
         self.conv5 = nn.Conv2d(512, 1024, 3, stride=2, padding=1, bias=True)  # in_size/32
         self.norm5 = norm_layer(1024)
 
-        self.fc = BLClassifier(1024 * (self.in_size / 32) * (self.in_size / 32))
+        self.fc = BLClassifier(1024 * (self.in_size // 32) * (self.in_size // 32))
 
         self.style_classifier_128 = BLClassifier(128 * 2)
         self.style_classifier_256 = BLClassifier(256 * 2)
         self.style_classifier_512 = BLClassifier(512 * 2)
         self.style_classifier_1024 = BLClassifier(1024 * 2)
 
-        self.reconstruct = nn.Linear(1024 * (self.in_size / 32) * (self.in_size / 32),
+        self.reconstruct = nn.Linear(1024 * (self.in_size // 32) * (self.in_size // 32),
                                      self.z_dim)
 
     def forward(self, x: torch.Tensor) -> (torch.Tensor, torch.Tensor, torch.Tensor):
