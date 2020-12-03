@@ -83,9 +83,9 @@ class Generator(nn.Module):
         self.out_size = out_shape[-1]
 
         self.constant = nn.Parameter(torch.rand((1, 512, 4, 4, 4)) * 2 - 1)
-        self.trans_conv1 = functional.trans_conv_3d_pad(512, 128, bias=False)
+        self.trans_conv1 = functional.trans_conv_3d_pad(512, 128, stride=2, bias=False)
         self.mlp1 = MLP([self.z_dim, 128 * 2])
-        self.trans_conv2 = functional.trans_conv_3d_pad(128, 64, bias=False)
+        self.trans_conv2 = functional.trans_conv_3d_pad(128, 64, stride=2, bias=False)
         self.mlp2 = MLP([self.z_dim, 64 * 2])
         # Rigid-transformation
         self.conv_3d = nn.Sequential(
@@ -93,16 +93,16 @@ class Generator(nn.Module):
             nn.Conv3d(64, 64, 3, padding=1, bias=False)
         )
         self.projection = Projection(64, 16, 1024)
-        self.trans_conv3 = functional.trans_conv_2d_pad(1024, 256, bias=False)
+        self.trans_conv3 = functional.trans_conv_2d_pad(1024, 256, stride=2, bias=False)
         self.mlp3 = MLP([self.z_dim, 256 * 2])
-        self.trans_conv4 = functional.trans_conv_2d_pad(256, 64, bias=False)
+        self.trans_conv4 = functional.trans_conv_2d_pad(256, 64, stride=2, bias=False)
         self.mlp4 = MLP([self.z_dim, 64 * 2])
 
         if self.out_size == 64:
             self.conv_2d = nn.Conv2d(64, 3, 3, padding=1, bias=False)
 
         elif self.out_size == 128:
-            self.trans_conv5 = functional.trans_conv_2d_pad(64, 32, bias=False)
+            self.trans_conv5 = functional.trans_conv_2d_pad(64, 32, stride=2, bias=False)
             self.mlp5 = MLP([self.z_dim, 32 * 2])
             self.conv_2d = nn.Conv2d(32, 3, 3, padding=1, bias=False)
 
