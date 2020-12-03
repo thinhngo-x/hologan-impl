@@ -76,26 +76,35 @@ class Generator(nn.Module):
         @param out_shape (Tuple) Shape of the output. Eg: (3, 128, 128)
         """
         super(Generator, self).__init__()
-        if out_shape != (3, 128, 128):
-            print("HoloGenerator: Output shape should be (3, 128, 128)!")
-            sys.exit()
+        # if out_shape != (3, 128, 128):
+        #     print("HoloGenerator: Output shape should be (3, 128, 128)!")
+        #     sys.exit()
         self.z_dim = latent_vector_size
+        self.out_size = out_shape[-1]
 
         self.constant = nn.Parameter(torch.rand((1, 512, 4, 4, 4)) * 2 - 1)
-        self.trans_conv1 = ResBlock(512, 128, stride=2, norm_layer=nn.InstanceNorm3d, conv=functional.trans_conv_3d_pad)
+        self.trans_conv1 = functional.trans_conv_3d_pad(512, 128, bias=True)
         self.mlp1 = MLP([self.z_dim, 128 * 2])
-        self.trans_conv2 = ResBlock(128, 64, stride=2, norm_layer=nn.InstanceNorm3d, conv=functional.trans_conv_3d_pad)
+        self.trans_conv2 = functional.trans_conv_3d_pad(128, 64, bias=True)
         self.mlp2 = MLP([self.z_dim, 64 * 2])
-        self.conv_3d = ResBlock(64, 64, stride=1, norm_layer=nn.InstanceNorm3d, conv=nn.Conv3d)
+        # Rigid-transformation
+        self.conv_3d = nn.Sequential(
+            nn.Conv3d(64, 64, 3, padding=1, bias=True),
+            nn.Conv3d(64, 64, 3, padding=1, bias=True)
+        )
         self.projection = Projection(64, 16, 1024)
-        self.trans_conv3 = ResBlock(1024, 256, stride=2, norm_layer=nn.InstanceNorm2d, conv=functional.trans_conv_2d_pad)
+        self.trans_conv3 = functional.trans_conv_2d_pad(1024, 256, bias=True)
         self.mlp3 = MLP([self.z_dim, 256 * 2])
-        self.trans_conv4 = ResBlock(256, 64, stride=2, norm_layer=nn.InstanceNorm2d, conv=functional.trans_conv_2d_pad)
+        self.trans_conv4 = functional.trans_conv_2d_pad(256, 64, bias=True)
         self.mlp4 = MLP([self.z_dim, 64 * 2])
-        self.trans_conv5 = ResBlock(64, 32, stride=2, norm_layer=nn.InstanceNorm2d, conv=functional.trans_conv_2d_pad)
-        self.mlp5 = MLP([self.z_dim, 32 * 2])
 
-        self.conv_2d = ResBlock(32, 3, stride=1, norm_layer=nn.InstanceNorm2d, conv=nn.Conv2d)
+        if self.out_size == 64:
+            self.conv_2d = nn.Conv2d(64, 3, 3, padding=1, bias=True)
+
+        elif self.out_size == 128:
+            self.trans_conv5 = functional.trans_conv_2d_pad(64, 32, bias=True)
+            self.mlp5 = MLP([self.z_dim, 32 * 2])
+            self.conv_2d = nn.Conv2d(32, 3, 3, padding=1, bias=True)
 
     def forward(self, z, rot_matrix):
         """Forward.
@@ -132,10 +141,11 @@ class Generator(nn.Module):
         x = functional.adain_2d_(x, style)
         x = F.leaky_relu(x)
 
-        x = self.trans_conv5(x)
-        style = self.mlp5(z).view(bs, 32, 2)  # Hard-code
-        x = functional.adain_2d_(x, style)
-        x = F.leaky_relu(x)
+        if self.out_size == 128:
+            x = self.trans_conv5(x)
+            style = self.mlp5(z).view(bs, 32, 2)  # Hard-code
+            x = functional.adain_2d_(x, style)
+            x = F.leaky_relu(x)
 
         x = self.conv_2d(x)
         out = torch.tanh(x)
@@ -151,34 +161,36 @@ class Discriminator(nn.Module):
         @param in_shape (Tuple) Shape of the input. Eg: (3, 128, 128)
         """
         super(Discriminator, self).__init__()
-        if in_shape != (3, 128, 128):
-            print("HoloDiscriminator: Input shape should be (3, 128, 128)!")
-            sys.exit()
+        # if in_shape != (3, 128, 128):
+        #     print("HoloDiscriminator: Input shape should be (3, 128, 128)!")
+        #     sys.exit()
         self.z_dim = latent_vector_size
+        self.in_size = in_shape[-1]
+
         if spec_norm is None:
             self.spec_norm = lambda x: x
         else:
             self.spec_norm = spec_norm
 
-        self.conv1 = self.spec_norm(nn.Conv2d(3, 64, kernel_size=3, stride=2, padding=1, bias=False))  # 64x64
-        self.conv2 = ResBlock(64, 128, stride=2, spec_norm=spec_norm, norm_layer=norm_layer)  # 32x32
+        self.conv1 = self.spec_norm(nn.Conv2d(3, 64, kernel_size=3, stride=2, padding=1, bias=False))  # in_size/2
+        self.conv2 = nn.Conv2d(64, 128, 3, stride=2, padding=1, bias=True)  # in_size/4
         self.norm2 = norm_layer(128)
-        self.conv3 = ResBlock(128, 256, stride=2, spec_norm=spec_norm, norm_layer=norm_layer)  # 16x16
+        self.conv3 = nn.Conv2d(128, 256, 3, stride=2, padding=1, bias=True)  # in_size/8
         self.norm3 = norm_layer(256)
-        self.conv4 = ResBlock(256, 512, stride=2, spec_norm=spec_norm, norm_layer=norm_layer)  # 8x8
+        self.conv4 = nn.Conv2d(256, 512, 3, stride=2, padding=1, bias=True)  # in_size/16
         self.norm4 = norm_layer(512)
-        self.conv5 = ResBlock(512, 1024, stride=2, spec_norm=spec_norm, norm_layer=norm_layer)  # 4x4
+        self.conv5 = nn.Conv2d(512, 1024, 3, stride=2, padding=1, bias=True)  # in_size/32
         self.norm5 = norm_layer(1024)
 
-        self.fc = BLClassifier(1024 * 16)
+        self.fc = BLClassifier(1024 * (self.in_size / 32) * (self.in_size / 32))
 
-        self.style_classifier_3 = BLClassifier(3 * 2)
         self.style_classifier_128 = BLClassifier(128 * 2)
         self.style_classifier_256 = BLClassifier(256 * 2)
         self.style_classifier_512 = BLClassifier(512 * 2)
         self.style_classifier_1024 = BLClassifier(1024 * 2)
 
-        self.reconstruct = nn.Linear(1024 * 16, self.z_dim)
+        self.reconstruct = nn.Linear(1024 * (self.in_size / 32) * (self.in_size / 32),
+                                     self.z_dim)
 
     def forward(self, x: torch.Tensor) -> (torch.Tensor, torch.Tensor, torch.Tensor):
         """Forward.
