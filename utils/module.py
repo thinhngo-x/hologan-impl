@@ -139,16 +139,19 @@ class ResBlock(nn.Module):
             self.spec_norm = spec_norm
 
         self.layers = nn.Sequential(
-            self.spec_norm(conv(inplanes, planes, kernel_size=3, stride=1, padding=1, bias=False)),
+            self.spec_norm(conv(inplanes, planes, kernel_size=3,
+                                stride=1, padding=1, bias=False)),
             nn.LeakyReLU(inplace=True),
             norm_layer(planes),
-            self.spec_norm(conv(planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)),
+            self.spec_norm(conv(planes, planes, kernel_size=3,
+                                stride=stride, padding=1, bias=False)),
             norm_layer(planes)
         )
 
         if stride != 1 or planes != inplanes:
             self.downsample = nn.Sequential(
-                self.spec_norm(conv(inplanes, planes, kernel_size=1, stride=stride, padding=0, bias=False))
+                self.spec_norm(conv(inplanes, planes, kernel_size=1,
+                                    stride=stride, padding=0, bias=False))
             )
         else:
             self.downsample = nn.Identity()

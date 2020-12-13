@@ -42,7 +42,8 @@ def gen_sample_images(model, z_dim, thetas_azm, thetas_elv, device):
     thetas_elv = torch.Tensor(thetas_elv).view(bs)
     rot_mat = get_matrix_rot_3d(thetas_azm, 'azimuth')
     rot_mat_elv = get_matrix_rot_3d(thetas_elv, 'elevation')
-    rot_mat[:, :3, :3] = torch.matmul(rot_mat[:, :3, :3], rot_mat_elv[:, :3, :3])
+    rot_mat[:, :3, :3] = torch.matmul(
+        rot_mat[:, :3, :3], rot_mat_elv[:, :3, :3])
 
     z = torch.rand((bs, z_dim), device=device)
 
@@ -102,7 +103,8 @@ def adain_2d_(x, s, eps=1e-8):
     @returns out (Tensor) Output of shape (batch_size, c, h, w)
     """
     m_x = torch.mean(x, dim=(2, 3), keepdim=True)
-    std_x = torch.std(x, dim=(2, 3), keepdim=True, unbiased=False)  # unbiased or not?
+    std_x = torch.std(x, dim=(2, 3), keepdim=True,
+                      unbiased=False)  # unbiased or not?
 
     # print("Mean of x: ", m_x)
     # print("Std of x: ", std_x)
@@ -125,7 +127,8 @@ def adain_3d_(x, s, eps=1e-8):
     """
     dims = len(x.shape)
     m_x = torch.mean(x, dim=tuple(range(2, dims)), keepdim=True)
-    std_x = torch.std(x, dim=tuple(range(2, dims)), keepdim=True, unbiased=False)  # unbiased or not?
+    std_x = torch.std(x, dim=tuple(range(2, dims)),
+                      keepdim=True, unbiased=False)  # unbiased or not?
 
     # print("Mean of x: ", m_x)
     # print("Std of x: ", std_x)
@@ -175,7 +178,10 @@ def get_matrix_rot_3d(theta, mode):
     return out
 
 
-def rigid_transform_3d_(x, matrix_rot, align_corners=False, mode='bilinear', padding_mode='zeros'):
+def rigid_transform_3d_(x, matrix_rot,
+                        align_corners=False,
+                        mode='bilinear',
+                        padding_mode='zeros'):
     """Rotate a 3D object.
 
     @param x (Tensor) Input of shape (batch_size, c, d, h, w)
@@ -186,28 +192,43 @@ def rigid_transform_3d_(x, matrix_rot, align_corners=False, mode='bilinear', pad
     # Generate a sampling grid given a batch of affine matrices
     grid = F.affine_grid(matrix_rot, x.size(), align_corners=align_corners)
     # Compute the output using the sampling grid
-    out = F.grid_sample(x, grid, align_corners=align_corners, mode=mode, padding_mode=padding_mode)
+    out = F.grid_sample(x, grid, align_corners=align_corners,
+                        mode=mode, padding_mode=padding_mode)
 
     return out
 
 
-def trans_conv_2d_pad(in_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False):
+def trans_conv_2d_pad(in_channels, out_channels,
+                      kernel_size=3, stride=1, padding=1, bias=False):
     """Construct a transposed convolution 2D with padding.
 
     The output shape exactly doubles the input shape when stride=2.
     """
     if stride == 1:
-        return nn.ConvTranspose2d(in_channels, out_channels, kernel_size, stride=1, padding=padding, bias=bias)
+        return nn.ConvTranspose2d(
+            in_channels, out_channels, kernel_size,
+            stride=1, padding=padding, bias=bias
+        )
     elif stride == 2:
-        return nn.ConvTranspose2d(in_channels, out_channels, kernel_size, stride=2, padding=padding, output_padding=1, bias=bias)
+        return nn.ConvTranspose2d(
+            in_channels, out_channels, kernel_size,
+            stride=2, padding=padding, output_padding=1, bias=bias
+        )
 
 
-def trans_conv_3d_pad(in_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False):
+def trans_conv_3d_pad(in_channels, out_channels,
+                      kernel_size=3, stride=1, padding=1, bias=False):
     """Construct a transposed convolution 3D with padding.
 
     The output shape exactly doubles the input shape when stride=2.
     """
     if stride == 1:
-        return nn.ConvTranspose3d(in_channels, out_channels, kernel_size, stride=1, padding=padding, bias=bias)
+        return nn.ConvTranspose3d(
+            in_channels, out_channels, kernel_size,
+            stride=1, padding=padding, bias=bias
+        )
     elif stride == 2:
-        return nn.ConvTranspose3d(in_channels, out_channels, kernel_size, stride=2, padding=padding, output_padding=1, bias=bias)
+        return nn.ConvTranspose3d(
+            in_channels, out_channels, kernel_size,
+            stride=2, padding=padding, output_padding=1, bias=bias
+        )
