@@ -96,8 +96,9 @@ class MLP(nn.Module):
     def __init__(self, n_features: List[int]):
         """Initialization.
 
-        @param n_features (list[int]) A list of integers indicating number of features for
-                                      each layer (including input layer)
+        @param n_features (list[int]) A list of integers indicating number of
+                                      features for each layer
+                                      (including input layer)
         """
         super(MLP, self).__init__()
         modules = []

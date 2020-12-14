@@ -212,9 +212,12 @@ class Discriminator(nn.Module):
         self.style_classifier_512 = BLClassifier(512 * 2)
         self.style_classifier_1024 = BLClassifier(1024 * 2)
 
-        self.reconstruct = nn.Linear(
-            1024 * (self.in_size // 32) * (self.in_size // 32),
-            self.z_dim
+        self.reconstruct = nn.Sequential(
+            nn.Linear(
+                1024 * (self.in_size // 32) * (self.in_size // 32),
+                1024
+            ),
+            nn.Linear(1024, self.z_dim)
         )
 
     def forward(self, x: torch.Tensor) -> (torch.Tensor, torch.Tensor, torch.Tensor):
