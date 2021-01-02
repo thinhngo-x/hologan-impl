@@ -191,8 +191,9 @@ def train_one_epoch(dataloader, model: HoloGAN.Net,
                 writer.add_scalar("lossD_fake/" + name,
                                   running_loss_D_fake[j] / print_step, step)
             sample_image = functional.gen_sample_images(model, z_dim,
-                                                        [-60, -45, 0, 45, 60],
                                                         [0, 0, 0, 0, 0],
+                                                        [0, 0, 0, 0, 0],
+                                                        [-60, -45, 0, 45, 60],
                                                         device)
             writer.add_image("sample_image", sample_image,
                              global_step=epoch * num_iter + i + 1)
