@@ -28,11 +28,12 @@ def channel_wise_mean_std_2d(x, unbiased=False):
     return out
 
 
-def gen_sample_images(model, z_dim, thetas_azm, thetas_elv, device):
+def gen_sample_images(model, z_dim, thetas_azm, thetas_elv, thetas_z, device):
     """Generate sample images.
 
     @param thetas_azm (List) Azimuth angles
     @param thetas_elevation (List) Elevation angles
+    @param thetas_z (List) Z-axis angles
 
     @returns make_grid
     """
@@ -42,8 +43,11 @@ def gen_sample_images(model, z_dim, thetas_azm, thetas_elv, device):
     thetas_elv = torch.Tensor(thetas_elv).view(bs)
     rot_mat = get_matrix_rot_3d(thetas_azm, 'azimuth')
     rot_mat_elv = get_matrix_rot_3d(thetas_elv, 'elevation')
+    rot_mat_z = get_matrix_rot_3d(thetas_z, 'z')
     rot_mat[:, :3, :3] = torch.matmul(
         rot_mat[:, :3, :3], rot_mat_elv[:, :3, :3])
+    rot_mat[:, :3, :3] = torch.matmul(
+        rot_mat[:, :3, :3], rot_mat_z[:, :3, :3])
 
     z = torch.rand((bs, z_dim), device=device)
 
@@ -149,6 +153,7 @@ def get_matrix_rot_3d(theta, mode):
     @param mode (string) Mode of the rotation
                          'elevation' rotate around x-axis (axis 1)
                          'azimuth' rotate around y-axis (axis 2)
+                         'z' rotate around z-axis (axis 3)
 
     @returns out (Tensor) Rotation matrix of shape (batch_size, 3, 4)
     """
