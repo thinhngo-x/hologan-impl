@@ -60,16 +60,14 @@ class Net(nn.Module):
                  img_shape: Tuple,
                  spec_norm=spectral_norm,
                  norm_layer=nn.InstanceNorm2d):
-        """Initialize.
-        """
+        """Initialize."""
         super(Net, self).__init__()
         self.G = Generator(latent_vector_size, img_shape)
         self.D = Discriminator(latent_vector_size, img_shape,
                                spec_norm=spec_norm, norm_layer=norm_layer)
 
     def forward(self, z, rot_matrix):
-        """Forward.
-        """
+        """Forward."""
         out = self.G(z, rot_matrix)
         d_gan, d_id, d_style = self.D(out)
 
@@ -92,32 +90,32 @@ class Generator(nn.Module):
 
         self.constant = nn.Parameter(torch.rand((1, 512, 4, 4, 4)) * 2 - 1)
         self.trans_conv1 = functional.trans_conv_3d_pad(
-            512, 128, stride=2, bias=False)
+            512, 128, stride=2, bias=True)
         self.mlp1 = MLP([self.z_dim, 128 * 2])
         self.trans_conv2 = functional.trans_conv_3d_pad(
-            128, 64, stride=2, bias=False)
+            128, 64, stride=2, bias=True)
         self.mlp2 = MLP([self.z_dim, 64 * 2])
         # Rigid-transformation
         self.conv_3d = nn.Sequential(
-            nn.Conv3d(64, 64, 3, padding=1, bias=False),
-            nn.Conv3d(64, 64, 3, padding=1, bias=False)
+            nn.Conv3d(64, 64, 3, padding=1, bias=True),
+            nn.Conv3d(64, 64, 3, padding=1, bias=True)
         )
         self.projection = Projection(64, 16, 1024)
         self.trans_conv3 = functional.trans_conv_2d_pad(
-            1024, 256, stride=2, bias=False)
+            1024, 256, stride=2, bias=True)
         self.mlp3 = MLP([self.z_dim, 256 * 2])
         self.trans_conv4 = functional.trans_conv_2d_pad(
-            256, 64, stride=2, bias=False)
+            256, 64, stride=2, bias=True)
         self.mlp4 = MLP([self.z_dim, 64 * 2])
 
         if self.out_size == 64:
-            self.conv_2d = nn.Conv2d(64, 3, 3, padding=1, bias=False)
+            self.conv_2d = nn.Conv2d(64, 3, 3, padding=1, bias=True)
 
         elif self.out_size == 128:
             self.trans_conv5 = functional.trans_conv_2d_pad(
-                64, 32, stride=2, bias=False)
+                64, 32, stride=2, bias=True)
             self.mlp5 = MLP([self.z_dim, 32 * 2])
-            self.conv_2d = nn.Conv2d(32, 3, 3, padding=1, bias=False)
+            self.conv_2d = nn.Conv2d(32, 3, 3, padding=1, bias=True)
 
     def forward(self, z, rot_matrix):
         """Forward.
@@ -190,18 +188,18 @@ class Discriminator(nn.Module):
 
         self.conv1 = self.spec_norm(
             nn.Conv2d(3, 64, kernel_size=3, stride=2,
-                      padding=1, bias=False))  # in_size/2
+                      padding=1, bias=True))  # in_size/2
         self.conv2 = nn.Conv2d(64, 128, 3, stride=2,
-                               padding=1, bias=False)  # in_size/4
+                               padding=1, bias=True)  # in_size/4
         self.norm2 = norm_layer(128)
         self.conv3 = nn.Conv2d(128, 256, 3, stride=2,
-                               padding=1, bias=False)  # in_size/8
+                               padding=1, bias=True)  # in_size/8
         self.norm3 = norm_layer(256)
         self.conv4 = nn.Conv2d(256, 512, 3, stride=2,
-                               padding=1, bias=False)  # in_size/16
+                               padding=1, bias=True)  # in_size/16
         self.norm4 = norm_layer(512)
         self.conv5 = nn.Conv2d(512, 1024, 3, stride=2,
-                               padding=1, bias=False)  # in_size/32
+                               padding=1, bias=True)  # in_size/32
         self.norm5 = norm_layer(1024)
 
         self.fc = BLClassifier(
