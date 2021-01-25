@@ -193,14 +193,14 @@ def train_one_epoch(dataloader, model: HoloGAN.Net,
             sample_image = functional.gen_sample_images(model, z_dim,
                                                         [0, 0, 0, 0, 0],
                                                         [0, 0, 0, 0, 0],
-                                                        [-60, -45, 0, 45, 60],
+                                                        [-90, -45, 0, 45, 90],
                                                         device)
             writer.add_image("sample_image", sample_image,
                              global_step=epoch * num_iter + i + 1)
             sample_image = functional.gen_sample_images(model, z_dim,
                                                         [0, 0, 0, 0, 0],
                                                         [0, 0, 0, 0, 0],
-                                                        [-60, -45, 0, 45, 60],
+                                                        [-90, -45, 0, 45, 90],
                                                         device)
             writer.add_image("sample_image_1", sample_image,
                              global_step=epoch * num_iter + i + 1)
